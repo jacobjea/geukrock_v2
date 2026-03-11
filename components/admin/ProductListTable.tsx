@@ -97,8 +97,7 @@ export function ProductListTable({
       return;
     }
 
-    const nextItems = reorderItems(orderedItems, draggingId, targetId);
-    updateOrder(nextItems);
+    updateOrder(reorderItems(orderedItems, draggingId, targetId));
     setDraggingId(null);
     setDropTargetId(null);
   }
@@ -196,6 +195,19 @@ export function ProductListTable({
             {orderedItems.map((item, index) => {
               const isDragging = draggingId === item.id;
               const isDropTarget = dropTargetId === item.id && !isDragging;
+              const isHighlighted = isDragging || isDropTarget;
+              const rowCellClass = isHighlighted
+                ? "border-b border-[#e5e7eb] bg-[#eef5ff]"
+                : "border-b border-[#e5e7eb] bg-white";
+              const firstCellHighlightClass = isDropTarget
+                ? "shadow-[inset_2px_0_0_#2f6fed,inset_0_2px_0_#2f6fed,inset_0_-2px_0_#2f6fed]"
+                : "";
+              const middleCellHighlightClass = isDropTarget
+                ? "shadow-[inset_0_2px_0_#2f6fed,inset_0_-2px_0_#2f6fed]"
+                : "";
+              const lastCellHighlightClass = isDropTarget
+                ? "shadow-[inset_-2px_0_0_#2f6fed,inset_0_2px_0_#2f6fed,inset_0_-2px_0_#2f6fed]"
+                : "";
 
               return (
                 <tr
@@ -221,12 +233,18 @@ export function ProductListTable({
                     setDropTargetId(null);
                   }}
                   className={`align-middle text-sm text-[#111827] ${
-                    isDragging ? "bg-[#f8fafc] opacity-70" : ""
-                  } ${isDropTarget ? "bg-[#eef5ff]" : ""}`}
+                    isDragging ? "opacity-70" : ""
+                  }`}
                 >
-                  <td className="border-b border-[#e5e7eb] px-4 py-4">
+                  <td className={`${rowCellClass} ${firstCellHighlightClass} px-4 py-4`}>
                     <div className="flex items-center gap-2 text-[#4b5563]">
-                      <span className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded border border-[#d1d5db] bg-[#f8f9fb] text-xs font-semibold text-[#6b7280] active:cursor-grabbing">
+                      <span
+                        className={`inline-flex h-7 w-7 cursor-grab items-center justify-center rounded border text-xs font-semibold active:cursor-grabbing ${
+                          isHighlighted
+                            ? "border-[#2f6fed] bg-white text-[#2f6fed]"
+                            : "border-[#d1d5db] bg-[#f8f9fb] text-[#6b7280]"
+                        }`}
+                      >
                         ↕
                       </span>
                       <span className="font-medium text-[#111827]">
@@ -234,9 +252,13 @@ export function ProductListTable({
                       </span>
                     </div>
                   </td>
-                  <td className="border-b border-[#e5e7eb] px-4 py-4">
+                  <td className={`${rowCellClass} ${middleCellHighlightClass} px-4 py-4`}>
                     <div className="flex min-w-72 items-center gap-3">
-                      <div className="flex h-16 w-16 items-center justify-center overflow-hidden border border-[#e5e7eb] bg-[#f9fafb]">
+                      <div
+                        className={`flex h-16 w-16 items-center justify-center overflow-hidden border bg-[#f9fafb] ${
+                          isHighlighted ? "border-[#b7d4ff]" : "border-[#e5e7eb]"
+                        }`}
+                      >
                         {item.thumbnailUrl ? (
                           <img
                             src={item.thumbnailUrl}
@@ -244,9 +266,7 @@ export function ProductListTable({
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <span className="text-[11px] text-[#9ca3af]">
-                            없음
-                          </span>
+                          <span className="text-[11px] text-[#9ca3af]">없음</span>
                         )}
                       </div>
                       <div className="space-y-1">
@@ -257,16 +277,22 @@ export function ProductListTable({
                       </div>
                     </div>
                   </td>
-                  <td className="border-b border-[#e5e7eb] px-4 py-4 font-medium">
+                  <td
+                    className={`${rowCellClass} ${middleCellHighlightClass} px-4 py-4 font-medium`}
+                  >
                     {formatPrice(item.price)}
                   </td>
-                  <td className="border-b border-[#e5e7eb] px-4 py-4 text-[#4b5563]">
+                  <td
+                    className={`${rowCellClass} ${middleCellHighlightClass} px-4 py-4 text-[#4b5563]`}
+                  >
                     {item.detailImageCount}장
                   </td>
-                  <td className="border-b border-[#e5e7eb] px-4 py-4 text-[#4b5563]">
+                  <td
+                    className={`${rowCellClass} ${middleCellHighlightClass} px-4 py-4 text-[#4b5563]`}
+                  >
                     {formatDate(item.createdAt)}
                   </td>
-                  <td className="border-b border-[#e5e7eb] px-4 py-4">
+                  <td className={`${rowCellClass} ${lastCellHighlightClass} px-4 py-4`}>
                     <div className="flex flex-wrap items-center gap-1.5">
                       <Link
                         href={`/admin/products/${item.id}/edit`}

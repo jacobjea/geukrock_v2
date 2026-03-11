@@ -59,6 +59,9 @@ function validateProductForm(formData: FormData) {
   const priceValue = getStringValue(formData.get("price"));
   const thumbnailFile = getSingleFile(formData.get("thumbnail"));
   const detailFiles = getFiles(formData.getAll("detailImages"));
+  const detailImageOrder = formData
+    .getAll("detailImageOrder")
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
   const deletedImageIds = formData
     .getAll("deletedImageIds")
     .filter((value): value is string => typeof value === "string" && value.length > 0);
@@ -105,6 +108,7 @@ function validateProductForm(formData: FormData) {
         price,
         thumbnailFile,
         detailFiles,
+        detailImageOrder,
         deletedImageIds,
         removeThumbnail,
       },
@@ -119,6 +123,7 @@ function validateProductForm(formData: FormData) {
       price,
       thumbnailFile,
       detailFiles,
+      detailImageOrder,
       deletedImageIds,
       removeThumbnail,
     },
@@ -210,6 +215,7 @@ export async function updateProductAction(
     price,
     thumbnailFile,
     detailFiles,
+    detailImageOrder,
     deletedImageIds,
     removeThumbnail,
   } = validation.parsed;
@@ -240,6 +246,7 @@ export async function updateProductAction(
       price,
       thumbnail,
       detailImages,
+      detailImageOrder,
       deletedImageIds,
       removeThumbnail,
     });

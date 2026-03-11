@@ -94,6 +94,7 @@ export interface CreateProductInput {
 export interface UpdateProductInput extends CreateProductInput {
   productId: string;
   deletedImageIds: string[];
+  detailImageOrder: string[];
   removeThumbnail: boolean;
 }
 
@@ -573,7 +574,94 @@ export async function updateProductRecord(
       );
     }
 
-    for (const [index, image] of input.detailImages.entries()) {
+    const remainingImagesById = new Map(
+      remainingImages.map((image) => [image.id, image]),
+    );
+    const orderedExistingImages: Array<{
+      id: string;
+      sortOrder: number;
+    }> = [];
+    const orderedNewImages: Array<{
+      image: ProductAssetInput;
+      sortOrder: number;
+    }> = [];
+    let nextSortOrder = 0;
+    let nextNewImageIndex = 0;
+
+    for (const token of input.detailImageOrder) {
+      if (token.startsWith("existing:")) {
+        const imageId = token.slice("existing:".length);
+        const image = remainingImagesById.get(imageId);
+
+        if (!image) {
+          continue;
+        }
+
+        orderedExistingImages.push({
+          id: image.id,
+          sortOrder: nextSortOrder,
+        });
+        remainingImagesById.delete(imageId);
+        nextSortOrder += 1;
+        continue;
+      }
+
+      if (token === "new") {
+        const image = input.detailImages[nextNewImageIndex];
+
+        if (!image) {
+          continue;
+        }
+
+        orderedNewImages.push({
+          image,
+          sortOrder: nextSortOrder,
+        });
+        nextNewImageIndex += 1;
+        nextSortOrder += 1;
+      }
+    }
+
+    for (const image of remainingImages) {
+      if (!remainingImagesById.has(image.id)) {
+        continue;
+      }
+
+      orderedExistingImages.push({
+        id: image.id,
+        sortOrder: nextSortOrder,
+      });
+      remainingImagesById.delete(image.id);
+      nextSortOrder += 1;
+    }
+
+    for (; nextNewImageIndex < input.detailImages.length; nextNewImageIndex += 1) {
+      const image = input.detailImages[nextNewImageIndex];
+
+      if (!image) {
+        continue;
+      }
+
+      orderedNewImages.push({
+        image,
+        sortOrder: nextSortOrder,
+      });
+      nextSortOrder += 1;
+    }
+
+    for (const image of orderedExistingImages) {
+      await client.query(
+        `
+          UPDATE product_images
+          SET sort_order = $3
+          WHERE product_id = $1
+            AND id = $2
+        `,
+        [input.productId, image.id, image.sortOrder],
+      );
+    }
+
+    for (const { image, sortOrder } of orderedNewImages) {
       await client.query(
         `
           INSERT INTO product_images (
@@ -584,7 +672,7 @@ export async function updateProductRecord(
           )
           VALUES ($1, $2, $3, $4)
         `,
-        [input.productId, image.url, image.pathname, remainingImages.length + index],
+        [input.productId, image.url, image.pathname, sortOrder],
       );
     }
 

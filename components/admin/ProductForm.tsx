@@ -3,12 +3,16 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useId, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 
-import type {
-  ProductDetail,
-  ProductFormState,
-} from "@/types/admin-product";
+import type { ProductDetail, ProductFormState } from "@/types/admin-product";
 import { initialProductFormState } from "@/types/admin-product";
 
 import { SubmitButton } from "./SubmitButton";
@@ -20,6 +24,48 @@ interface ProductFormProps {
     formData: FormData,
   ) => Promise<ProductFormState>;
   initialProduct?: ProductDetail;
+}
+
+type DetailImageFormItem =
+  | {
+      key: string;
+      kind: "existing";
+      imageId: string;
+      url: string;
+      label: string;
+    }
+  | {
+      key: string;
+      kind: "new";
+      file: File;
+      url: string;
+      label: string;
+    };
+
+function createImageKey() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `detail-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function isNewDetailImage(
+  item: DetailImageFormItem,
+): item is Extract<DetailImageFormItem, { kind: "new" }> {
+  return item.kind === "new";
+}
+
+function buildInitialDetailImageItems(initialProduct?: ProductDetail) {
+  return (
+    initialProduct?.images.map((image) => ({
+      key: image.id,
+      kind: "existing" as const,
+      imageId: image.id,
+      url: image.url,
+      label: `기존 이미지 ${image.sortOrder + 1}`,
+    })) ?? []
+  );
 }
 
 function normalizePriceInput(value: string) {
@@ -42,6 +88,29 @@ function formatPriceInput(value: string) {
   return Number(normalized).toLocaleString("ko-KR");
 }
 
+function reorderItems(
+  items: DetailImageFormItem[],
+  draggedKey: string,
+  targetKey: string,
+) {
+  const fromIndex = items.findIndex((item) => item.key === draggedKey);
+  const toIndex = items.findIndex((item) => item.key === targetKey);
+
+  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+    return items;
+  }
+
+  const nextItems = [...items];
+  const [movedItem] = nextItems.splice(fromIndex, 1);
+
+  if (!movedItem) {
+    return items;
+  }
+
+  nextItems.splice(toIndex, 0, movedItem);
+  return nextItems;
+}
+
 export function ProductForm({
   mode,
   action,
@@ -50,12 +119,25 @@ export function ProductForm({
   const [state, formAction] = useActionState(action, initialProductFormState);
   const thumbnailInputId = useId();
   const detailInputId = useId();
+  const detailInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailObjectUrlRef = useRef<string | null>(null);
+  const detailImageItemsRef = useRef<DetailImageFormItem[]>(
+    buildInitialDetailImageItems(initialProduct),
+  );
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
     initialProduct?.thumbnailUrl ?? null,
   );
-  const [detailPreviews, setDetailPreviews] = useState<string[]>([]);
   const [thumbnailFileName, setThumbnailFileName] = useState("");
-  const [detailFileCount, setDetailFileCount] = useState(0);
+  const [detailImageItems, setDetailImageItems] = useState<DetailImageFormItem[]>(
+    () => buildInitialDetailImageItems(initialProduct),
+  );
+  const [draggingDetailKey, setDraggingDetailKey] = useState<string | null>(null);
+  const [dropTargetDetailKey, setDropTargetDetailKey] = useState<string | null>(
+    null,
+  );
+  const [deletedExistingImageIds, setDeletedExistingImageIds] = useState<string[]>(
+    [],
+  );
   const [priceInput, setPriceInput] = useState(() =>
     initialProduct?.price !== undefined
       ? formatPriceInput(String(initialProduct.price))
@@ -63,10 +145,116 @@ export function ProductForm({
   );
 
   useEffect(() => {
+    detailImageItemsRef.current = detailImageItems;
+  }, [detailImageItems]);
+
+  useEffect(() => {
     return () => {
-      detailPreviews.forEach((preview) => URL.revokeObjectURL(preview));
+      if (thumbnailObjectUrlRef.current) {
+        URL.revokeObjectURL(thumbnailObjectUrlRef.current);
+      }
+
+      detailImageItemsRef.current.forEach((item) => {
+        if (isNewDetailImage(item)) {
+          URL.revokeObjectURL(item.url);
+        }
+      });
     };
-  }, [detailPreviews]);
+  }, []);
+
+  function syncDetailInputFiles(items: DetailImageFormItem[]) {
+    const input = detailInputRef.current;
+
+    if (!input || typeof DataTransfer === "undefined") {
+      return;
+    }
+
+    const dataTransfer = new DataTransfer();
+
+    items.forEach((item) => {
+      if (isNewDetailImage(item)) {
+        dataTransfer.items.add(item.file);
+      }
+    });
+
+    input.files = dataTransfer.files;
+  }
+
+  function applyDetailImageItems(nextItems: DetailImageFormItem[]) {
+    setDetailImageItems(nextItems);
+    syncDetailInputFiles(nextItems);
+  }
+
+  function handleAddDetailImages(files: File[]) {
+    if (!files.length) {
+      return;
+    }
+
+    const nextItems: DetailImageFormItem[] = files.map((file) => ({
+      key: createImageKey(),
+      kind: "new",
+      file,
+      url: URL.createObjectURL(file),
+      label: file.name,
+    }));
+
+    applyDetailImageItems([...detailImageItems, ...nextItems]);
+  }
+
+  function handleRemoveDetailImage(itemKey: string) {
+    const target = detailImageItems.find((item) => item.key === itemKey);
+
+    if (!target) {
+      return;
+    }
+
+    if (isNewDetailImage(target)) {
+      URL.revokeObjectURL(target.url);
+    } else {
+      setDeletedExistingImageIds((current) =>
+        current.includes(target.imageId)
+          ? current
+          : [...current, target.imageId],
+      );
+    }
+
+    applyDetailImageItems(detailImageItems.filter((item) => item.key !== itemKey));
+    setDraggingDetailKey(null);
+    setDropTargetDetailKey(null);
+  }
+
+  function handleDragStart(itemKey: string) {
+    setDraggingDetailKey(itemKey);
+    setDropTargetDetailKey(itemKey);
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>, itemKey: string) {
+    event.preventDefault();
+
+    if (!draggingDetailKey || draggingDetailKey === itemKey) {
+      return;
+    }
+
+    setDropTargetDetailKey(itemKey);
+  }
+
+  function handleDrop(itemKey: string) {
+    if (!draggingDetailKey || draggingDetailKey === itemKey) {
+      setDropTargetDetailKey(null);
+      return;
+    }
+
+    applyDetailImageItems(
+      reorderItems(detailImageItems, draggingDetailKey, itemKey),
+    );
+    setDraggingDetailKey(null);
+    setDropTargetDetailKey(null);
+  }
+
+  function resetDragState() {
+    setDraggingDetailKey(null);
+    setDropTargetDetailKey(null);
+  }
 
   return (
     <form action={formAction} className="space-y-6">
@@ -76,15 +264,13 @@ export function ProductForm({
         </div>
         <div className="divide-y divide-[#e5e7eb]">
           <div className="grid gap-3 px-5 py-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-start">
-            <div className="pt-2 text-sm font-medium text-[#374151]">
-              상품명
-            </div>
+            <div className="pt-2 text-sm font-medium text-[#374151]">상품명</div>
             <div>
               <input
                 name="name"
                 type="text"
                 defaultValue={initialProduct?.name ?? ""}
-                placeholder="상품명을 입력하세요"
+                placeholder="상품명을 입력해 주세요."
                 className="w-full rounded border border-[#cfd5dd] px-3 py-2 text-sm outline-none focus:border-[#2f6fed]"
               />
               {state.fieldErrors.name ? (
@@ -96,9 +282,7 @@ export function ProductForm({
           </div>
 
           <div className="grid gap-3 px-5 py-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-start">
-            <div className="pt-2 text-sm font-medium text-[#374151]">
-              판매가
-            </div>
+            <div className="pt-2 text-sm font-medium text-[#374151]">판매가</div>
             <div>
               <input
                 name="price"
@@ -134,7 +318,7 @@ export function ProductForm({
                 name="description"
                 defaultValue={initialProduct?.description ?? ""}
                 rows={8}
-                placeholder="상품 설명을 입력하세요"
+                placeholder="상품 설명을 입력해 주세요."
                 className="w-full rounded border border-[#cfd5dd] px-3 py-2 text-sm outline-none focus:border-[#2f6fed]"
               />
               {state.fieldErrors.description ? (
@@ -166,13 +350,24 @@ export function ProductForm({
                 const file = event.target.files?.[0];
 
                 if (!file) {
+                  if (thumbnailObjectUrlRef.current) {
+                    URL.revokeObjectURL(thumbnailObjectUrlRef.current);
+                    thumbnailObjectUrlRef.current = null;
+                  }
+
                   setThumbnailFileName("");
                   setThumbnailPreview(initialProduct?.thumbnailUrl ?? null);
                   return;
                 }
 
+                if (thumbnailObjectUrlRef.current) {
+                  URL.revokeObjectURL(thumbnailObjectUrlRef.current);
+                }
+
+                const previewUrl = URL.createObjectURL(file);
+                thumbnailObjectUrlRef.current = previewUrl;
                 setThumbnailFileName(file.name);
-                setThumbnailPreview(URL.createObjectURL(file));
+                setThumbnailPreview(previewUrl);
               }}
             />
 
@@ -207,7 +402,7 @@ export function ProductForm({
                   type="checkbox"
                   className="h-4 w-4 rounded border-[#cfd5dd]"
                 />
-                기존 썸네일 삭제
+                기존 대표 이미지 삭제
               </label>
             ) : null}
 
@@ -229,8 +424,9 @@ export function ProductForm({
             <div className="pt-2 text-sm font-medium text-[#374151]">
               이미지 추가
             </div>
-            <div>
+            <div className="space-y-2">
               <input
+                ref={detailInputRef}
                 id={detailInputId}
                 name="detailImages"
                 type="file"
@@ -238,87 +434,149 @@ export function ProductForm({
                 multiple
                 className="sr-only"
                 onChange={(event) => {
-                  detailPreviews.forEach((preview) => URL.revokeObjectURL(preview));
-
-                  const files = Array.from(event.target.files ?? []);
-                  const previews = files.map((file) => URL.createObjectURL(file));
-
-                  setDetailFileCount(files.length);
-                  setDetailPreviews(previews);
+                  handleAddDetailImages(Array.from(event.target.files ?? []));
                 }}
               />
+
               <div className="flex flex-wrap items-center gap-3">
                 <label
                   htmlFor={detailInputId}
                   className="inline-flex cursor-pointer items-center rounded border border-[#c7ccd4] bg-white px-4 py-2 text-sm font-medium hover:bg-[#f7f8fa]"
                 >
-                  상세 이미지 선택
+                  {detailImageItems.length
+                    ? "상세 이미지 추가"
+                    : "상세 이미지 선택"}
                 </label>
-                {detailFileCount > 0 ? (
+                {detailImageItems.length ? (
                   <span className="text-sm text-[#4b5563]">
-                    {detailFileCount}개 선택됨
+                    총 {detailImageItems.length}장 등록 예정
                   </span>
                 ) : null}
               </div>
-              <p className="mt-2 text-sm text-[#6b7280]">
-                여러 장을 선택하면 한 번에 업로드됩니다.
+
+              <p className="text-sm text-[#6b7280]">
+                이미 선택한 이미지가 있어도 계속 추가할 수 있습니다. 카드 자체를
+                드래그해서 순서를 바꾸고, 개별 삭제도 가능합니다.
               </p>
+
               {state.fieldErrors.detailImages ? (
-                <p className="mt-2 text-sm text-[#d9534f]">
+                <p className="text-sm text-[#d9534f]">
                   {state.fieldErrors.detailImages}
                 </p>
               ) : null}
             </div>
           </div>
 
-          {initialProduct?.images.length ? (
-            <div className="grid gap-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-start">
-              <div className="pt-2 text-sm font-medium text-[#374151]">
-                등록된 이미지
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {initialProduct.images.map((image) => (
-                  <label
-                    key={image.id}
-                    className="space-y-2 border border-[#d9dde3] bg-white p-3"
-                  >
-                    <img
-                      src={image.url}
-                      alt={`${initialProduct.name} 상세 이미지`}
-                      className="aspect-[4/5] w-full border border-[#e5e7eb] object-cover"
-                    />
-                    <span className="flex items-center gap-2 text-sm text-[#4b5563]">
-                      <input
-                        name="deletedImageIds"
-                        type="checkbox"
-                        value={image.id}
-                        className="h-4 w-4 rounded border-[#cfd5dd]"
-                      />
-                      삭제
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ) : null}
+          {deletedExistingImageIds.map((imageId) => (
+            <input
+              key={`deleted-${imageId}`}
+              type="hidden"
+              name="deletedImageIds"
+              value={imageId}
+            />
+          ))}
 
-          {detailPreviews.length ? (
-            <div className="grid gap-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-start">
-              <div className="pt-2 text-sm font-medium text-[#374151]">
-                새 이미지 미리보기
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {detailPreviews.map((preview, index) => (
-                  <img
-                    key={preview}
-                    src={preview}
-                    alt={`새 상세 이미지 ${index + 1}`}
-                    className="aspect-[4/5] w-full border border-[#d9dde3] object-cover"
-                  />
-                ))}
-              </div>
+          {detailImageItems.map((item) => (
+            <input
+              key={`order-${item.key}`}
+              type="hidden"
+              name="detailImageOrder"
+              value={item.kind === "existing" ? `existing:${item.imageId}` : "new"}
+            />
+          ))}
+
+          <div className="grid gap-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-start">
+            <div className="pt-2 text-sm font-medium text-[#374151]">
+              이미지 목록
             </div>
-          ) : null}
+            <div className="space-y-3">
+              <p className="text-xs text-[#6b7280]">
+                드래그 후 원하는 이미지 카드 위에 놓으면 순서가 변경됩니다.
+              </p>
+
+              {detailImageItems.length ? (
+                <div className="flex flex-wrap gap-4">
+                  {detailImageItems.map((item, index) => {
+                    const isDragging = draggingDetailKey === item.key;
+                    const isDropTarget =
+                      dropTargetDetailKey === item.key &&
+                      draggingDetailKey !== item.key;
+                    const isHighlighted = isDragging || isDropTarget;
+
+                    return (
+                      <div
+                        key={item.key}
+                        draggable
+                        onDragStart={() => handleDragStart(item.key)}
+                        onDragOver={(event) => handleDragOver(event, item.key)}
+                        onDrop={() => handleDrop(item.key)}
+                        onDragEnd={resetDragState}
+                        className={`w-40 overflow-hidden border transition ${
+                          isDragging
+                            ? "border-[#d9dde3] bg-white opacity-70 shadow-[0_12px_24px_rgba(17,24,39,0.08)]"
+                            : isDropTarget
+                              ? "border-[#2f6fed] bg-[#eef5ff] ring-2 ring-[#2f6fed] shadow-[0_12px_24px_rgba(47,111,237,0.18)]"
+                              : "border-[#d9dde3] bg-white"
+                        }`}
+                      >
+                        <img
+                          src={item.url}
+                          alt={`${index + 1}번 상세 이미지`}
+                          className={`h-40 w-40 border-b object-cover ${
+                            isHighlighted
+                              ? "border-[#b7d4ff]"
+                              : "border-[#e5e7eb]"
+                          }`}
+                        />
+
+                        <div
+                          className={`space-y-3 p-3 ${
+                            isHighlighted ? "bg-[#eef5ff]" : "bg-white"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-[#111827]">
+                                {index + 1}번 이미지
+                              </p>
+                              <p className="mt-1 text-xs text-[#6b7280]">
+                                {item.kind === "existing"
+                                  ? "기존 이미지"
+                                  : "새 이미지"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <p className="truncate text-xs text-[#4b5563]">
+                            {item.label}
+                          </p>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-[#6b7280]">
+                              {item.kind === "existing"
+                                ? "기존 등록분"
+                                : "이번 추가분"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDetailImage(item.key)}
+                              className="inline-flex items-center justify-center rounded border border-[#d9534f] bg-white px-3 py-2 text-xs font-medium text-[#d9534f] hover:bg-[#fff5f5]"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border border-dashed border-[#d9dde3] bg-[#fafafa] px-5 py-10 text-center text-sm text-[#6b7280]">
+                  아직 선택한 상세 이미지가 없습니다.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 

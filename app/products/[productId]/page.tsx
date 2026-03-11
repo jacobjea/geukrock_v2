@@ -161,7 +161,7 @@ export default async function ProductDetailPage({
             </div>
 
             {detailImages.length ? (
-              <div className="mx-auto mt-8 flex max-w-[980px] flex-col gap-5">
+              <div className="mx-auto mt-8 flex max-w-[620px] flex-col gap-5">
                 {detailImages.map((image, index) => (
                   <div
                     key={image.id}
