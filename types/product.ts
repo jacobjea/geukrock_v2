@@ -44,6 +44,24 @@ export interface Product {
   badge?: string;
 }
 
+export interface StorefrontProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  thumbnailUrl: string | null;
+}
+
+export interface StorefrontProductImage {
+  id: string;
+  url: string;
+  kind: "thumbnail" | "detail";
+}
+
+export interface StorefrontProductDetail extends StorefrontProduct {
+  images: StorefrontProductImage[];
+}
+
 export interface PromoBanner {
   id: string;
   eyebrow: string;

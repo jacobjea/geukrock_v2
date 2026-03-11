@@ -1,4 +1,10 @@
+import Link from "next/link";
+
 import { navigationItems } from "@/lib/mock-data";
+
+function resolveNavigationHref(href: string) {
+  return href.startsWith("#") ? `/${href}` : href;
+}
 
 function SearchIcon({ className = "" }: { className?: string }) {
   return (
@@ -25,22 +31,22 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-black/10 bg-background/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-4 sm:px-8 lg:px-12">
         <div className="flex items-center justify-between gap-4">
-          <a
+          <Link
             className="shrink-0 text-[1.02rem] font-semibold tracking-[0.38em] text-black transition-opacity duration-300 hover:opacity-70"
-            href="#"
+            href="/"
           >
             GEUKROCK
-          </a>
+          </Link>
 
           <nav className="hidden items-center gap-7 md:flex">
             {navigationItems.map((item) => (
-              <a
+              <Link
                 key={item.label}
                 className="text-[11px] font-medium uppercase tracking-[0.28em] text-black/62 transition-colors duration-300 hover:text-black"
-                href={item.href}
+                href={resolveNavigationHref(item.href)}
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -63,27 +69,30 @@ export function Header() {
           </label>
 
           <div className="hidden min-[560px]:flex items-center gap-4 text-[11px] font-medium uppercase tracking-[0.24em] text-black/55">
-            <a className="transition-colors duration-300 hover:text-black" href="#promo">
-              Campaign
-            </a>
-            <a
+            <Link
               className="transition-colors duration-300 hover:text-black"
-              href="#footer"
+              href="/#promo"
+            >
+              Campaign
+            </Link>
+            <Link
+              className="transition-colors duration-300 hover:text-black"
+              href="/#footer"
             >
               Support
-            </a>
+            </Link>
           </div>
         </div>
 
         <nav className="flex items-center gap-5 overflow-x-auto whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.24em] text-black/58 md:hidden">
           {navigationItems.map((item) => (
-            <a
+            <Link
               key={item.label}
               className="transition-colors duration-300 hover:text-black"
-              href={item.href}
+              href={resolveNavigationHref(item.href)}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
       </div>
