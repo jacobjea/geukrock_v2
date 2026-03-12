@@ -192,7 +192,7 @@ export function buildKakaoAuthorizeUrl(state: string) {
     client_id: clientId,
     redirect_uri: redirectUri,
     state,
-    scope: "account_email,profile_nickname,profile_image",
+    scope: "profile_nickname,profile_image",
   });
 
   return `https://kauth.kakao.com/oauth/authorize?${searchParams.toString()}`;
@@ -262,8 +262,16 @@ async function exchangeCodeForToken(code: string) {
   const data = (await response.json()) as KakaoTokenResponse;
 
   if (!response.ok || !data.access_token) {
+    const baseMessage =
+      data.error_description || data.error || "Failed to exchange Kakao OAuth token.";
+    const isBadClientCredentials =
+      data.error === "invalid_client" &&
+      data.error_description?.toLowerCase() === "bad client credentials";
+
     throw new Error(
-      data.error_description || data.error || "Failed to exchange Kakao OAuth token.",
+      isBadClientCredentials
+        ? `${baseMessage} Check KAKAO_CLIENT_SECRET or Kakao REST API key configuration.`
+        : baseMessage,
     );
   }
 

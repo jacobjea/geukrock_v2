@@ -35,7 +35,18 @@ export async function GET(request: NextRequest) {
     const redirectUrl = new URL(savedState.returnTo, request.url);
     redirectUrl.searchParams.set("login", "success");
     return NextResponse.redirect(redirectUrl);
-  } catch {
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown Kakao login error";
+    console.error("Kakao login callback failed", {
+      message,
+      error,
+    });
+
+    if (process.env.NODE_ENV !== "production") {
+      fallbackUrl.searchParams.set("loginDetail", message);
+    }
+
     fallbackUrl.searchParams.set("login", "error");
     return NextResponse.redirect(fallbackUrl);
   }

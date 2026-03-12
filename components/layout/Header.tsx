@@ -86,20 +86,20 @@ export async function Header() {
                 >
                   마이페이지
                 </Link>
-                <Link
+                <a
                   className="transition-colors duration-300 hover:text-black"
                   href="/api/auth/logout?returnTo=/"
                 >
                   로그아웃
-                </Link>
+                </a>
               </>
             ) : (
-              <Link
+              <a
                 className="transition-colors duration-300 hover:text-black"
                 href="/api/auth/kakao/login?returnTo=/mypage"
               >
                 카카오 로그인
-              </Link>
+              </a>
             )}
             <Link
               className="transition-colors duration-300 hover:text-black"
@@ -134,20 +134,20 @@ export async function Header() {
               >
                 마이페이지
               </Link>
-              <Link
+              <a
                 className="transition-colors duration-300 hover:text-black"
                 href="/api/auth/logout?returnTo=/"
               >
                 로그아웃
-              </Link>
+              </a>
             </>
           ) : (
-            <Link
+            <a
               className="transition-colors duration-300 hover:text-black"
               href="/api/auth/kakao/login?returnTo=/mypage"
             >
               카카오 로그인
-            </Link>
+            </a>
           )}
         </nav>
       </div>

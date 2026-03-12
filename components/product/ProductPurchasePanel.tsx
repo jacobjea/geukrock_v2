@@ -1,6 +1,4 @@
 "use client";
-
-import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { createOrderAction } from "@/app/orders/actions";
@@ -93,9 +91,9 @@ export function ProductPurchasePanel({
         ) : (
           <div className="mb-4 border border-[#e5e7eb] bg-[#f7f8fa] px-4 py-3 text-sm text-[#4b5563]">
             주문은 로그인 없이도 가능하지만,{" "}
-            <Link href={loginHref} className="font-medium text-[#2f6fed]">
+            <a href={loginHref} className="font-medium text-[#2f6fed]">
               카카오 로그인
-            </Link>
+            </a>
             후 주문하면 마이페이지에서 주문 내역을 확인할 수 있습니다.
           </div>
         )}

@@ -31,6 +31,7 @@ function getLoginMessage(login?: string) {
 interface MyPageProps {
   searchParams: Promise<{
     login?: string;
+    loginDetail?: string;
   }>;
 }
 
@@ -63,6 +64,14 @@ export default async function MyPage({ searchParams }: MyPageProps) {
           </div>
         ) : null}
 
+        {process.env.NODE_ENV !== "production" &&
+        params.login === "error" &&
+        params.loginDetail ? (
+          <div className="mt-3 border border-[#f2d2d2] bg-[#fff5f5] px-4 py-3 font-mono text-xs text-[#8a2c2c]">
+            {params.loginDetail}
+          </div>
+        ) : null}
+
         {!currentMember ? (
           <section className="mt-6 border border-black/10 bg-white px-5 py-12 text-center">
             <p className="text-base font-medium text-black">
@@ -71,12 +80,12 @@ export default async function MyPage({ searchParams }: MyPageProps) {
             <p className="mt-2 text-sm text-black/58">
               카카오 로그인 후 주문하면 마이페이지에서 접수 내역을 바로 볼 수 있습니다.
             </p>
-            <Link
+            <a
               href="/api/auth/kakao/login?returnTo=/mypage"
               className="mt-6 inline-flex h-11 items-center justify-center rounded border border-[#f2d667] bg-[#fee500] px-5 text-sm font-medium text-[#3b1e1e] hover:bg-[#f8dc3c]"
             >
               카카오 로그인
-            </Link>
+            </a>
           </section>
         ) : (
           <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -115,12 +124,12 @@ export default async function MyPage({ searchParams }: MyPageProps) {
                 >
                   쇼핑 계속하기
                 </Link>
-                <Link
+                <a
                   href="/api/auth/logout?returnTo=/"
                   className="inline-flex h-10 items-center justify-center border border-black/12 px-4 text-sm hover:bg-black/[0.03]"
                 >
                   로그아웃
-                </Link>
+                </a>
               </div>
             </section>
 
