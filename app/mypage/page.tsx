@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { signInWithKakaoAction, signOutAction } from "@/lib/auth-actions";
 import { formatDateTime, formatPrice } from "@/lib/admin/format";
 import { listOrdersByMemberUserId } from "@/lib/admin/orders";
 import { getCurrentMember } from "@/lib/auth";
@@ -15,7 +16,11 @@ import { PRODUCT_COLOR_LABELS } from "@/types/product";
 
 export const dynamic = "force-dynamic";
 
-function getLoginMessage(login?: string) {
+function getLoginMessage(login?: string, error?: string) {
+  if (error) {
+    return "카카오 로그인 중 오류가 발생했습니다.";
+  }
+
   switch (login) {
     case "success":
       return "카카오 로그인이 완료되었습니다.";
@@ -31,7 +36,7 @@ function getLoginMessage(login?: string) {
 interface MyPageProps {
   searchParams: Promise<{
     login?: string;
-    loginDetail?: string;
+    error?: string;
   }>;
 }
 
@@ -40,7 +45,7 @@ export default async function MyPage({ searchParams }: MyPageProps) {
     searchParams,
     getCurrentMember(),
   ]);
-  const loginMessage = getLoginMessage(params.login);
+  const loginMessage = getLoginMessage(params.login, params.error);
   const orders = currentMember
     ? await listOrdersByMemberUserId(currentMember.id)
     : [];
@@ -64,11 +69,9 @@ export default async function MyPage({ searchParams }: MyPageProps) {
           </div>
         ) : null}
 
-        {process.env.NODE_ENV !== "production" &&
-        params.login === "error" &&
-        params.loginDetail ? (
+        {process.env.NODE_ENV !== "production" && params.error ? (
           <div className="mt-3 border border-[#f2d2d2] bg-[#fff5f5] px-4 py-3 font-mono text-xs text-[#8a2c2c]">
-            {params.loginDetail}
+            {params.error}
           </div>
         ) : null}
 
@@ -80,12 +83,15 @@ export default async function MyPage({ searchParams }: MyPageProps) {
             <p className="mt-2 text-sm text-black/58">
               카카오 로그인 후 주문하면 마이페이지에서 접수 내역을 바로 볼 수 있습니다.
             </p>
-            <a
-              href="/api/auth/kakao/login?returnTo=/mypage"
-              className="mt-6 inline-flex h-11 items-center justify-center rounded border border-[#f2d667] bg-[#fee500] px-5 text-sm font-medium text-[#3b1e1e] hover:bg-[#f8dc3c]"
-            >
-              카카오 로그인
-            </a>
+            <form action={signInWithKakaoAction} className="mt-6">
+              <input type="hidden" name="returnTo" value="/mypage" />
+              <button
+                type="submit"
+                className="inline-flex h-11 items-center justify-center rounded border border-[#f2d667] bg-[#fee500] px-5 text-sm font-medium text-[#3b1e1e] hover:bg-[#f8dc3c]"
+              >
+                카카오 로그인
+              </button>
+            </form>
           </section>
         ) : (
           <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -124,12 +130,15 @@ export default async function MyPage({ searchParams }: MyPageProps) {
                 >
                   쇼핑 계속하기
                 </Link>
-                <a
-                  href="/api/auth/logout?returnTo=/"
-                  className="inline-flex h-10 items-center justify-center border border-black/12 px-4 text-sm hover:bg-black/[0.03]"
-                >
-                  로그아웃
-                </a>
+                <form action={signOutAction}>
+                  <input type="hidden" name="returnTo" value="/" />
+                  <button
+                    type="submit"
+                    className="inline-flex h-10 items-center justify-center border border-black/12 px-4 text-sm hover:bg-black/[0.03]"
+                  >
+                    로그아웃
+                  </button>
+                </form>
               </div>
             </section>
 

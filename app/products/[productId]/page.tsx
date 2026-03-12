@@ -83,7 +83,7 @@ export default async function ProductDetailPage({
               price={product.price}
               sizeOptions={product.sizeOptions}
               colorOptions={product.colorOptions}
-              loginHref={`/api/auth/kakao/login?returnTo=${encodeURIComponent(`/products/${product.id}`)}`}
+              loginReturnTo={`/products/${product.id}`}
               currentMemberName={currentMember?.nickname ?? null}
               isSignedIn={Boolean(currentMember)}
             />

@@ -1,53 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import {
-  consumeKakaoOauthStateCookie,
-  createMemberSession,
-  upsertMemberFromKakaoCode,
-} from "@/lib/auth";
+import { sanitizeReturnTo } from "@/lib/member-auth";
 
 export async function GET(request: NextRequest) {
-  const code = request.nextUrl.searchParams.get("code");
-  const state = request.nextUrl.searchParams.get("state");
-  const error = request.nextUrl.searchParams.get("error");
-  const fallbackUrl = new URL("/mypage", request.url);
+  const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
+  const redirectUrl = new URL("/api/auth/callback/kakao", request.url);
 
-  if (error) {
-    fallbackUrl.searchParams.set("login", "error");
-    return NextResponse.redirect(fallbackUrl);
+  request.nextUrl.searchParams.forEach((value, key) => {
+    redirectUrl.searchParams.set(key, value);
+  });
+
+  if (!redirectUrl.searchParams.get("callbackUrl") && callbackUrl) {
+    redirectUrl.searchParams.set(
+      "callbackUrl",
+      sanitizeReturnTo(callbackUrl),
+    );
   }
 
-  if (!code || !state) {
-    fallbackUrl.searchParams.set("login", "invalid");
-    return NextResponse.redirect(fallbackUrl);
-  }
-
-  const savedState = await consumeKakaoOauthStateCookie();
-
-  if (!savedState || savedState.state !== state) {
-    fallbackUrl.searchParams.set("login", "invalid");
-    return NextResponse.redirect(fallbackUrl);
-  }
-
-  try {
-    const member = await upsertMemberFromKakaoCode(code);
-    await createMemberSession(member.id);
-    const redirectUrl = new URL(savedState.returnTo, request.url);
-    redirectUrl.searchParams.set("login", "success");
-    return NextResponse.redirect(redirectUrl);
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown Kakao login error";
-    console.error("Kakao login callback failed", {
-      message,
-      error,
-    });
-
-    if (process.env.NODE_ENV !== "production") {
-      fallbackUrl.searchParams.set("loginDetail", message);
-    }
-
-    fallbackUrl.searchParams.set("login", "error");
-    return NextResponse.redirect(fallbackUrl);
-  }
+  return NextResponse.redirect(redirectUrl);
 }

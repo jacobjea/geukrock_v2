@@ -3,6 +3,7 @@ import { useActionState, useState } from "react";
 
 import { createOrderAction } from "@/app/orders/actions";
 import { formatPrice } from "@/lib/admin/format";
+import { signInWithKakaoAction } from "@/lib/auth-actions";
 import { initialOrderFormState } from "@/types/order";
 import {
   PRODUCT_COLOR_LABELS,
@@ -18,7 +19,7 @@ interface ProductPurchasePanelProps {
   price: number;
   sizeOptions: ProductSize[];
   colorOptions: ProductColor[];
-  loginHref: string;
+  loginReturnTo: string;
   currentMemberName?: string | null;
   isSignedIn: boolean;
 }
@@ -30,7 +31,7 @@ export function ProductPurchasePanel({
   price,
   sizeOptions,
   colorOptions,
-  loginHref,
+  loginReturnTo,
   currentMemberName,
   isSignedIn,
 }: ProductPurchasePanelProps) {
@@ -91,9 +92,12 @@ export function ProductPurchasePanel({
         ) : (
           <div className="mb-4 border border-[#e5e7eb] bg-[#f7f8fa] px-4 py-3 text-sm text-[#4b5563]">
             주문은 로그인 없이도 가능하지만,{" "}
-            <a href={loginHref} className="font-medium text-[#2f6fed]">
-              카카오 로그인
-            </a>
+            <form action={signInWithKakaoAction} className="inline">
+              <input type="hidden" name="returnTo" value={loginReturnTo} />
+              <button type="submit" className="font-medium text-[#2f6fed]">
+                카카오 로그인
+              </button>
+            </form>
             후 주문하면 마이페이지에서 주문 내역을 확인할 수 있습니다.
           </div>
         )}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { signInWithKakaoAction, signOutAction } from "@/lib/auth-actions";
 import { getCurrentMember } from "@/lib/auth";
 import { navigationItems } from "@/lib/mock-data";
 
@@ -86,20 +87,26 @@ export async function Header() {
                 >
                   마이페이지
                 </Link>
-                <a
-                  className="transition-colors duration-300 hover:text-black"
-                  href="/api/auth/logout?returnTo=/"
-                >
-                  로그아웃
-                </a>
+                <form action={signOutAction}>
+                  <input type="hidden" name="returnTo" value="/" />
+                  <button
+                    type="submit"
+                    className="transition-colors duration-300 hover:text-black"
+                  >
+                    로그아웃
+                  </button>
+                </form>
               </>
             ) : (
-              <a
-                className="transition-colors duration-300 hover:text-black"
-                href="/api/auth/kakao/login?returnTo=/mypage"
-              >
-                카카오 로그인
-              </a>
+              <form action={signInWithKakaoAction}>
+                <input type="hidden" name="returnTo" value="/mypage" />
+                <button
+                  type="submit"
+                  className="transition-colors duration-300 hover:text-black"
+                >
+                  카카오 로그인
+                </button>
+              </form>
             )}
             <Link
               className="transition-colors duration-300 hover:text-black"
@@ -134,20 +141,26 @@ export async function Header() {
               >
                 마이페이지
               </Link>
-              <a
-                className="transition-colors duration-300 hover:text-black"
-                href="/api/auth/logout?returnTo=/"
-              >
-                로그아웃
-              </a>
+              <form action={signOutAction}>
+                <input type="hidden" name="returnTo" value="/" />
+                <button
+                  type="submit"
+                  className="transition-colors duration-300 hover:text-black"
+                >
+                  로그아웃
+                </button>
+              </form>
             </>
           ) : (
-            <a
-              className="transition-colors duration-300 hover:text-black"
-              href="/api/auth/kakao/login?returnTo=/mypage"
-            >
-              카카오 로그인
-            </a>
+            <form action={signInWithKakaoAction}>
+              <input type="hidden" name="returnTo" value="/mypage" />
+              <button
+                type="submit"
+                className="transition-colors duration-300 hover:text-black"
+              >
+                카카오 로그인
+              </button>
+            </form>
           )}
         </nav>
       </div>

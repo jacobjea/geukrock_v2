@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import {
-  buildKakaoAuthorizeUrl,
-  sanitizeReturnTo,
-  setKakaoOauthStateCookie,
-} from "@/lib/auth";
+import { signIn } from "@/auth";
+import { appendSearchParam, sanitizeReturnTo } from "@/lib/member-auth";
 
 export async function GET(request: NextRequest) {
-  const returnTo = sanitizeReturnTo(
-    request.nextUrl.searchParams.get("returnTo"),
-  );
-  const state = crypto.randomUUID();
+  const returnTo = sanitizeReturnTo(request.nextUrl.searchParams.get("returnTo"));
 
-  await setKakaoOauthStateCookie(state, returnTo);
+  await signIn("kakao", {
+    redirectTo: appendSearchParam(returnTo, "login", "success"),
+  });
 
-  return NextResponse.redirect(buildKakaoAuthorizeUrl(state));
+  return NextResponse.redirect(new URL(returnTo, request.url));
 }
