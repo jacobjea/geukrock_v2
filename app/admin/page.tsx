@@ -39,9 +39,9 @@ export default async function AdminProductsPage({
   return (
     <div className="space-y-6">
       <section className="border border-[#d9dde3] bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#e5e7eb] px-5 py-4">
-          <div>
-            <h2 className="text-xl font-bold">상품 목록</h2>
+        <div className="flex flex-col items-start gap-3 border-b border-[#e5e7eb] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="min-w-0">
+            <h2 className="break-keep text-lg font-bold sm:text-xl">상품 목록</h2>
             <p className="mt-1 text-sm text-[#6b7280]">
               등록된 상품을 조회하고 수정, 삭제, 진열순서 변경까지 할 수
               있습니다.
@@ -49,13 +49,13 @@ export default async function AdminProductsPage({
           </div>
           <Link
             href="/admin/products/new"
-            className="inline-flex items-center rounded border border-[#2f6fed] bg-[#2f6fed] px-4 py-2 text-sm font-medium text-white hover:bg-[#255fce]"
+            className="inline-flex w-full items-center justify-center rounded border border-[#2f6fed] bg-[#2f6fed] px-4 py-2 text-sm font-medium text-white hover:bg-[#255fce] sm:w-auto"
           >
             상품 등록
           </Link>
         </div>
 
-        <div className="flex flex-wrap gap-x-6 gap-y-2 px-5 py-4 text-sm text-[#4b5563]">
+        <div className="grid gap-2 px-4 py-4 text-sm text-[#4b5563] sm:flex sm:flex-wrap sm:gap-x-6 sm:gap-y-2 sm:px-5">
           <span>전체 상품 수: {productPage.totalItems}개</span>
           <span>페이지당 노출 수: {productPage.pageSize}개</span>
           <span>

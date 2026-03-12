@@ -134,18 +134,18 @@ export function ProductListTable({
 
   return (
     <div className="overflow-hidden border border-[#d9dde3] bg-white">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e5e7eb] px-4 py-3">
+      <div className="flex flex-col items-start gap-3 border-b border-[#e5e7eb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-[#4b5563]">
           행을 드래그해서 현재 페이지의 상품 진열순서를 바꾼 뒤 저장할 수
           있습니다.
         </p>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           {isDirty ? (
             <button
               type="button"
               onClick={handleReset}
               disabled={isPending}
-              className="inline-flex items-center rounded border border-[#c7ccd4] bg-white px-3 py-2 text-sm font-medium text-[#374151] hover:bg-[#f7f8fa] disabled:cursor-not-allowed disabled:opacity-55"
+              className="inline-flex flex-1 items-center justify-center rounded border border-[#c7ccd4] bg-white px-3 py-2 text-sm font-medium text-[#374151] hover:bg-[#f7f8fa] disabled:cursor-not-allowed disabled:opacity-55 sm:flex-none"
             >
               순서 되돌리기
             </button>
@@ -154,7 +154,7 @@ export function ProductListTable({
             type="button"
             onClick={handleSaveOrder}
             disabled={!isDirty || isPending}
-            className="inline-flex min-w-28 items-center justify-center rounded border border-[#2f6fed] bg-[#2f6fed] px-4 py-2 text-sm font-medium text-white hover:bg-[#255fce] disabled:cursor-not-allowed disabled:opacity-55"
+            className="inline-flex min-w-28 flex-1 items-center justify-center rounded border border-[#2f6fed] bg-[#2f6fed] px-4 py-2 text-sm font-medium text-white hover:bg-[#255fce] disabled:cursor-not-allowed disabled:opacity-55 sm:flex-none"
           >
             {isPending ? "저장 중..." : "순서 저장"}
           </button>

@@ -10,6 +10,44 @@ export type VisualTone =
 
 export type PromoTone = "night" | "paper";
 
+export const PRODUCT_SIZES = ["XS", "S", "M", "L", "XL", "2XL"] as const;
+export type ProductSize = (typeof PRODUCT_SIZES)[number];
+
+export const PRODUCT_COLORS = ["BLACK", "WHITE"] as const;
+export type ProductColor = (typeof PRODUCT_COLORS)[number];
+
+export const PRODUCT_COLOR_LABELS: Record<ProductColor, string> = {
+  BLACK: "블랙",
+  WHITE: "화이트",
+};
+
+export const PRODUCT_COLOR_SWATCHES: Record<ProductColor, string> = {
+  BLACK: "#111111",
+  WHITE: "#f5f5f5",
+};
+
+export function isProductSize(value: string): value is ProductSize {
+  return PRODUCT_SIZES.includes(value as ProductSize);
+}
+
+export function isProductColor(value: string): value is ProductColor {
+  return PRODUCT_COLORS.includes(value as ProductColor);
+}
+
+export function normalizeProductSizes(
+  values: readonly string[] | null | undefined,
+): ProductSize[] {
+  const normalized = (values ?? []).filter(isProductSize);
+  return normalized.length ? normalized : [...PRODUCT_SIZES];
+}
+
+export function normalizeProductColors(
+  values: readonly string[] | null | undefined,
+): ProductColor[] {
+  const normalized = (values ?? []).filter(isProductColor);
+  return normalized.length ? normalized : ["BLACK"];
+}
+
 export interface NavigationItem {
   label: string;
   href: string;
@@ -60,6 +98,8 @@ export interface StorefrontProductImage {
 
 export interface StorefrontProductDetail extends StorefrontProduct {
   images: StorefrontProductImage[];
+  sizeOptions: ProductSize[];
+  colorOptions: ProductColor[];
 }
 
 export interface PromoBanner {

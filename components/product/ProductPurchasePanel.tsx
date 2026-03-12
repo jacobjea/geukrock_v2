@@ -2,14 +2,23 @@
 
 import { useState } from "react";
 
+import { addToCartAction } from "@/app/cart/actions";
+import { CartSubmitButton } from "@/components/cart/CartSubmitButton";
 import { formatPrice } from "@/lib/admin/format";
+import {
+  PRODUCT_COLOR_LABELS,
+  PRODUCT_COLOR_SWATCHES,
+  type ProductColor,
+  type ProductSize,
+} from "@/types/product";
 
 interface ProductPurchasePanelProps {
   productId: string;
   productName: string;
   description: string | null;
   price: number;
-  detailImageCount: number;
+  sizeOptions: ProductSize[];
+  colorOptions: ProductColor[];
 }
 
 export function ProductPurchasePanel({
@@ -17,8 +26,15 @@ export function ProductPurchasePanel({
   productName,
   description,
   price,
-  detailImageCount,
+  sizeOptions,
+  colorOptions,
 }: ProductPurchasePanelProps) {
+  const [selectedSize, setSelectedSize] = useState<ProductSize>(
+    sizeOptions[0] ?? "M",
+  );
+  const [selectedColor, setSelectedColor] = useState<ProductColor>(
+    colorOptions[0] ?? "BLACK",
+  );
   const [quantity, setQuantity] = useState(1);
   const totalPrice = price * quantity;
 
@@ -45,16 +61,8 @@ export function ProductPurchasePanel({
             </strong>
           </div>
           <div className="flex items-start justify-between gap-6 border-t border-black/8 pt-3">
-            <span className="text-black/48">상품코드</span>
-            <span className="font-medium text-black">{productId.slice(0, 8)}</span>
-          </div>
-          <div className="flex items-start justify-between gap-6 border-t border-black/8 pt-3">
             <span className="text-black/48">배송정보</span>
-            <span className="text-right">결제 완료 후 1~3일 이내 발송</span>
-          </div>
-          <div className="flex items-start justify-between gap-6 border-t border-black/8 pt-3">
-            <span className="text-black/48">상세 이미지</span>
-            <span>{detailImageCount}장</span>
+            <span className="text-right">마감 이후 1~3일 이내 주문 제작</span>
           </div>
           <div className="flex items-start justify-between gap-6 border-t border-black/8 pt-3">
             <span className="text-black/48">회원 혜택</span>
@@ -63,6 +71,73 @@ export function ProductPurchasePanel({
         </div>
 
         <div className="space-y-4 border-t border-black/8 pt-5">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-black/48">사이즈</span>
+              <span className="font-medium text-black">{selectedSize}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {sizeOptions.map((size) => {
+                const isSelected = selectedSize === size;
+
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setSelectedSize(size)}
+                    className={[
+                      "inline-flex min-w-12 items-center justify-center border px-3 py-2 text-sm font-medium transition-colors",
+                      isSelected
+                        ? "border-black bg-black text-white"
+                        : "border-black/12 bg-white text-black/72 hover:bg-black/[0.03]",
+                    ].join(" ")}
+                  >
+                    {size}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2 border-t border-black/8 pt-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-black/48">색상</span>
+              <span className="font-medium text-black">
+                {PRODUCT_COLOR_LABELS[selectedColor]}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {colorOptions.map((color) => {
+                const isSelected = selectedColor === color;
+
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setSelectedColor(color)}
+                    className={[
+                      "inline-flex items-center gap-2 border px-3 py-2 text-sm font-medium transition-colors",
+                      isSelected
+                        ? "border-black bg-black text-white"
+                        : "border-black/12 bg-white text-black/72 hover:bg-black/[0.03]",
+                    ].join(" ")}
+                  >
+                    <span
+                      className={[
+                        "h-3 w-3 rounded-full border",
+                        color === "WHITE" && isSelected
+                          ? "border-white/60"
+                          : "border-black/15",
+                      ].join(" ")}
+                      style={{ backgroundColor: PRODUCT_COLOR_SWATCHES[color] }}
+                    />
+                    {PRODUCT_COLOR_LABELS[color]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="flex items-center justify-between text-sm">
             <span className="text-black/48">수량</span>
             <div className="inline-flex items-center border border-black/10">
@@ -96,13 +171,17 @@ export function ProductPurchasePanel({
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled
-              className="inline-flex h-12 items-center justify-center border border-black/12 bg-[#f6f4ef] text-sm font-medium text-black/42"
-            >
-              장바구니 준비 중
-            </button>
+            <form action={addToCartAction}>
+              <input type="hidden" name="productId" value={productId} />
+              <input type="hidden" name="size" value={selectedSize} />
+              <input type="hidden" name="color" value={selectedColor} />
+              <input type="hidden" name="quantity" value={quantity} />
+              <CartSubmitButton
+                idleLabel="장바구니 담기"
+                pendingLabel="담는 중..."
+                className="inline-flex h-12 w-full items-center justify-center border border-black/12 bg-[#f6f4ef] text-sm font-medium text-black/78 hover:bg-[#ece9e2] disabled:cursor-not-allowed disabled:text-black/42"
+              />
+            </form>
             <button
               type="button"
               disabled

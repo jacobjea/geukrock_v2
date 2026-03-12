@@ -14,6 +14,12 @@ import {
 
 import type { ProductDetail, ProductFormState } from "@/types/admin-product";
 import { initialProductFormState } from "@/types/admin-product";
+import {
+  PRODUCT_COLORS,
+  PRODUCT_COLOR_LABELS,
+  PRODUCT_COLOR_SWATCHES,
+  PRODUCT_SIZES,
+} from "@/types/product";
 
 import { SubmitButton } from "./SubmitButton";
 
@@ -304,6 +310,76 @@ export function ProductForm({
               {state.fieldErrors.price ? (
                 <p className="mt-2 text-sm text-[#d9534f]">
                   {state.fieldErrors.price}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="grid gap-3 px-5 py-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-start">
+            <div className="pt-2 text-sm font-medium text-[#374151]">
+              판매 사이즈
+            </div>
+            <div>
+              <div className="flex flex-wrap gap-2">
+                {PRODUCT_SIZES.map((size) => (
+                  <label
+                    key={size}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded border border-[#cfd5dd] bg-white px-3 py-2 text-sm hover:bg-[#f7f8fa]"
+                  >
+                    <input
+                      name="sizes"
+                      type="checkbox"
+                      value={size}
+                      defaultChecked={initialProduct?.sizeOptions.includes(size) ?? false}
+                      className="h-4 w-4 rounded border-[#cfd5dd]"
+                    />
+                    <span>{size}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-[#6b7280]">
+                판매 가능한 사이즈를 모두 선택해 주세요.
+              </p>
+              {state.fieldErrors.sizes ? (
+                <p className="mt-2 text-sm text-[#d9534f]">
+                  {state.fieldErrors.sizes}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="grid gap-3 px-5 py-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-start">
+            <div className="pt-2 text-sm font-medium text-[#374151]">
+              판매 색상
+            </div>
+            <div>
+              <div className="flex flex-wrap gap-2">
+                {PRODUCT_COLORS.map((color) => (
+                  <label
+                    key={color}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded border border-[#cfd5dd] bg-white px-3 py-2 text-sm hover:bg-[#f7f8fa]"
+                  >
+                    <input
+                      name="colors"
+                      type="checkbox"
+                      value={color}
+                      defaultChecked={initialProduct?.colorOptions.includes(color) ?? false}
+                      className="h-4 w-4 rounded border-[#cfd5dd]"
+                    />
+                    <span
+                      className="h-3 w-3 rounded-full border border-black/15"
+                      style={{ backgroundColor: PRODUCT_COLOR_SWATCHES[color] }}
+                    />
+                    <span>{PRODUCT_COLOR_LABELS[color]}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-[#6b7280]">
+                상품 상세 페이지에서 선택 가능한 색상을 설정합니다.
+              </p>
+              {state.fieldErrors.colors ? (
+                <p className="mt-2 text-sm text-[#d9534f]">
+                  {state.fieldErrors.colors}
                 </p>
               ) : null}
             </div>

@@ -9,6 +9,7 @@ import { Header } from "@/components/layout/Header";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductPurchasePanel } from "@/components/product/ProductPurchasePanel";
 import { getStorefrontProductById } from "@/lib/admin/products";
+import { PRODUCT_COLOR_LABELS } from "@/types/product";
 
 export const dynamic = "force-dynamic";
 
@@ -71,11 +72,13 @@ export default async function ProductDetailPage({
               images={product.images}
             />
             <ProductPurchasePanel
+              key={product.id}
               productId={product.id}
               productName={product.name}
               description={product.description}
               price={product.price}
-              detailImageCount={detailImages.length}
+              sizeOptions={product.sizeOptions}
+              colorOptions={product.colorOptions}
             />
           </section>
 
@@ -123,13 +126,17 @@ export default async function ProductDetailPage({
                     <dt>대표 이미지</dt>
                     <dd>{product.thumbnailUrl ? "등록됨" : "없음"}</dd>
                   </div>
-                  <div className="flex items-center justify-between gap-4 border-b border-black/6 pb-3">
-                    <dt>상세 이미지</dt>
-                    <dd>{detailImages.length}장</dd>
+                  <div className="flex items-start justify-between gap-4 border-b border-black/6 pb-3">
+                    <dt>사이즈</dt>
+                    <dd className="text-right">{product.sizeOptions.join(", ")}</dd>
                   </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt>상품 코드</dt>
-                    <dd>{product.id.slice(0, 8)}</dd>
+                  <div className="flex items-start justify-between gap-4">
+                    <dt>색상</dt>
+                    <dd className="text-right">
+                      {product.colorOptions
+                        .map((color) => PRODUCT_COLOR_LABELS[color])
+                        .join(", ")}
+                    </dd>
                   </div>
                 </dl>
               </div>

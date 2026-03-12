@@ -71,6 +71,12 @@ export function Header() {
           <div className="hidden min-[560px]:flex items-center gap-4 text-[11px] font-medium uppercase tracking-[0.24em] text-black/55">
             <Link
               className="transition-colors duration-300 hover:text-black"
+              href="/cart"
+            >
+              Cart
+            </Link>
+            <Link
+              className="transition-colors duration-300 hover:text-black"
               href="/#promo"
             >
               Campaign
@@ -94,6 +100,12 @@ export function Header() {
               {item.label}
             </Link>
           ))}
+          <Link
+            className="transition-colors duration-300 hover:text-black"
+            href="/cart"
+          >
+            Cart
+          </Link>
         </nav>
       </div>
     </header>

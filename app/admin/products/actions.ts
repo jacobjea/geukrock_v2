@@ -16,6 +16,12 @@ import {
   type ProductFormState,
   type ProductSortActionResult,
 } from "@/types/admin-product";
+import {
+  isProductColor,
+  isProductSize,
+  type ProductColor,
+  type ProductSize,
+} from "@/types/product";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
@@ -42,6 +48,34 @@ function getFiles(values: FormDataEntryValue[]) {
   );
 }
 
+function getSelectedSizes(values: FormDataEntryValue[]) {
+  const rawSizes = values.filter(
+    (value): value is string => typeof value === "string" && value.length > 0,
+  );
+
+  return {
+    values: Array.from(
+      new Set(rawSizes.filter((value): value is ProductSize => isProductSize(value))),
+    ),
+    hasInvalidValue: rawSizes.some((value) => !isProductSize(value)),
+  };
+}
+
+function getSelectedColors(values: FormDataEntryValue[]) {
+  const rawColors = values.filter(
+    (value): value is string => typeof value === "string" && value.length > 0,
+  );
+
+  return {
+    values: Array.from(
+      new Set(
+        rawColors.filter((value): value is ProductColor => isProductColor(value)),
+      ),
+    ),
+    hasInvalidValue: rawColors.some((value) => !isProductColor(value)),
+  };
+}
+
 function createErrorState(
   fieldErrors: ProductFormState["fieldErrors"],
   message = "입력값을 확인해 주세요.",
@@ -59,6 +93,8 @@ function validateProductForm(formData: FormData) {
   const priceValue = getStringValue(formData.get("price"));
   const thumbnailFile = getSingleFile(formData.get("thumbnail"));
   const detailFiles = getFiles(formData.getAll("detailImages"));
+  const selectedSizes = getSelectedSizes(formData.getAll("sizes"));
+  const selectedColors = getSelectedColors(formData.getAll("colors"));
   const detailImageOrder = formData
     .getAll("detailImageOrder")
     .filter((value): value is string => typeof value === "string" && value.length > 0);
@@ -79,6 +115,18 @@ function validateProductForm(formData: FormData) {
     fieldErrors.price = "판매가를 입력해 주세요.";
   } else if (!Number.isInteger(price) || price < 0) {
     fieldErrors.price = "판매가는 0 이상의 정수만 입력할 수 있습니다.";
+  }
+
+  if (!selectedSizes.values.length) {
+    fieldErrors.sizes = "판매할 사이즈를 1개 이상 선택해 주세요.";
+  } else if (selectedSizes.hasInvalidValue) {
+    fieldErrors.sizes = "선택 가능한 사이즈 값을 확인해 주세요.";
+  }
+
+  if (!selectedColors.values.length) {
+    fieldErrors.colors = "판매할 색상을 1개 이상 선택해 주세요.";
+  } else if (selectedColors.hasInvalidValue) {
+    fieldErrors.colors = "선택 가능한 색상 값을 확인해 주세요.";
   }
 
   if (thumbnailFile && !thumbnailFile.type.startsWith("image/")) {
@@ -106,6 +154,8 @@ function validateProductForm(formData: FormData) {
         name,
         description,
         price,
+        sizeOptions: selectedSizes.values,
+        colorOptions: selectedColors.values,
         thumbnailFile,
         detailFiles,
         detailImageOrder,
@@ -121,6 +171,8 @@ function validateProductForm(formData: FormData) {
       name,
       description,
       price,
+      sizeOptions: selectedSizes.values,
+      colorOptions: selectedColors.values,
       thumbnailFile,
       detailFiles,
       detailImageOrder,
@@ -150,7 +202,15 @@ export async function createProductAction(
     return validation.state;
   }
 
-  const { name, description, price, thumbnailFile, detailFiles } = validation.parsed;
+  const {
+    name,
+    description,
+    price,
+    sizeOptions,
+    colorOptions,
+    thumbnailFile,
+    detailFiles,
+  } = validation.parsed;
   const uploadedAssets: string[] = [];
 
   try {
@@ -175,6 +235,8 @@ export async function createProductAction(
       name,
       description,
       price,
+      sizeOptions,
+      colorOptions,
       thumbnail,
       detailImages,
     });
@@ -209,13 +271,15 @@ export async function updateProductAction(
     return validation.state;
   }
 
-  const {
-    name,
-    description,
-    price,
-    thumbnailFile,
-    detailFiles,
-    detailImageOrder,
+    const {
+      name,
+      description,
+      price,
+      sizeOptions,
+      colorOptions,
+      thumbnailFile,
+      detailFiles,
+      detailImageOrder,
     deletedImageIds,
     removeThumbnail,
   } = validation.parsed;
@@ -244,6 +308,8 @@ export async function updateProductAction(
       name,
       description,
       price,
+      sizeOptions,
+      colorOptions,
       thumbnail,
       detailImages,
       detailImageOrder,
@@ -260,6 +326,7 @@ export async function updateProductAction(
     revalidatePath("/admin");
     revalidatePath("/");
     revalidatePath(`/admin/products/${productId}/edit`);
+    revalidatePath(`/products/${productId}`);
     redirect("/admin?status=updated");
   } catch (error) {
     if (isRedirectError(error)) {

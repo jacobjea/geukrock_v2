@@ -3,6 +3,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 
 import { query, withTransaction } from "@/lib/db";
+import { normalizeProductColors, normalizeProductSizes } from "@/types/product";
 import type {
   PaginatedProducts,
   ProductDetail,
@@ -10,6 +11,8 @@ import type {
   ProductListItem,
 } from "@/types/admin-product";
 import type {
+  ProductColor,
+  ProductSize,
   StorefrontProduct,
   StorefrontProductDetail,
   StorefrontProductImage,
@@ -25,6 +28,8 @@ CREATE TABLE IF NOT EXISTS products (
   name TEXT NOT NULL,
   description TEXT,
   price INTEGER NOT NULL CHECK (price >= 0),
+  size_options TEXT[] NOT NULL DEFAULT ARRAY['XS', 'S', 'M', 'L', 'XL', '2XL']::text[],
+  color_options TEXT[] NOT NULL DEFAULT ARRAY['BLACK']::text[],
   thumbnail_url TEXT,
   thumbnail_pathname TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
@@ -34,6 +39,34 @@ CREATE TABLE IF NOT EXISTS products (
 
 ALTER TABLE products
   ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS size_options TEXT[] DEFAULT ARRAY['XS', 'S', 'M', 'L', 'XL', '2XL']::text[];
+
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS color_options TEXT[] DEFAULT ARRAY['BLACK']::text[];
+
+UPDATE products
+SET size_options = ARRAY['XS', 'S', 'M', 'L', 'XL', '2XL']::text[]
+WHERE size_options IS NULL
+   OR COALESCE(array_length(size_options, 1), 0) = 0;
+
+UPDATE products
+SET color_options = ARRAY['BLACK']::text[]
+WHERE color_options IS NULL
+   OR COALESCE(array_length(color_options, 1), 0) = 0;
+
+ALTER TABLE products
+  ALTER COLUMN size_options SET NOT NULL;
+
+ALTER TABLE products
+  ALTER COLUMN color_options SET NOT NULL;
+
+ALTER TABLE products
+  ALTER COLUMN size_options SET DEFAULT ARRAY['XS', 'S', 'M', 'L', 'XL', '2XL']::text[];
+
+ALTER TABLE products
+  ALTER COLUMN color_options SET DEFAULT ARRAY['BLACK']::text[];
 
 CREATE TABLE IF NOT EXISTS product_images (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -59,6 +92,8 @@ type ProductRow = {
   name: string;
   description: string | null;
   price: number;
+  sizeOptions: string[] | null;
+  colorOptions: string[] | null;
   sortOrder: number;
   thumbnailUrl: string | null;
   thumbnailPathname: string | null;
@@ -87,6 +122,8 @@ export interface CreateProductInput {
   name: string;
   description: string | null;
   price: number;
+  sizeOptions: ProductSize[];
+  colorOptions: ProductColor[];
   thumbnail: ProductAssetInput | null;
   detailImages: ProductAssetInput[];
 }
@@ -193,6 +230,8 @@ function toProductDetail(
     name: productRow.name,
     description: productRow.description,
     price: Number(productRow.price),
+    sizeOptions: normalizeProductSizes(productRow.sizeOptions),
+    colorOptions: normalizeProductColors(productRow.colorOptions),
     sortOrder: Number(productRow.sortOrder),
     thumbnailUrl:
       getAdminBlobUrl(productRow.thumbnailPathname) ?? productRow.thumbnailUrl,
@@ -239,6 +278,8 @@ function toStorefrontProductDetail(
     name: productRow.name,
     description: productRow.description,
     price: Number(productRow.price),
+    sizeOptions: normalizeProductSizes(productRow.sizeOptions),
+    colorOptions: normalizeProductColors(productRow.colorOptions),
     thumbnailUrl,
     images,
   };
@@ -259,6 +300,8 @@ async function getProductForUpdate(
         name,
         description,
         price,
+        size_options AS "sizeOptions",
+        color_options AS "colorOptions",
         sort_order AS "sortOrder",
         thumbnail_url AS "thumbnailUrl",
         thumbnail_pathname AS "thumbnailPathname",
@@ -310,6 +353,8 @@ export async function listProducts(page: number): Promise<PaginatedProducts> {
           p.name,
           p.description,
           p.price,
+          p.size_options AS "sizeOptions",
+          p.color_options AS "colorOptions",
           p.sort_order AS "sortOrder",
           p.thumbnail_url AS "thumbnailUrl",
           p.thumbnail_pathname AS "thumbnailPathname",
@@ -349,6 +394,8 @@ export async function getProductById(productId: string) {
         name,
         description,
         price,
+        size_options AS "sizeOptions",
+        color_options AS "colorOptions",
         sort_order AS "sortOrder",
         thumbnail_url AS "thumbnailUrl",
         thumbnail_pathname AS "thumbnailPathname",
@@ -394,6 +441,8 @@ export async function listStorefrontProducts(): Promise<StorefrontProduct[]> {
         name,
         description,
         price,
+        size_options AS "sizeOptions",
+        color_options AS "colorOptions",
         sort_order AS "sortOrder",
         thumbnail_url AS "thumbnailUrl",
         thumbnail_pathname AS "thumbnailPathname",
@@ -419,6 +468,8 @@ export async function getStorefrontProductById(
         name,
         description,
         price,
+        size_options AS "sizeOptions",
+        color_options AS "colorOptions",
         sort_order AS "sortOrder",
         thumbnail_url AS "thumbnailUrl",
         thumbnail_pathname AS "thumbnailPathname",
@@ -474,17 +525,21 @@ export async function createProductRecord(
           name,
           description,
           price,
+          size_options,
+          color_options,
           thumbnail_url,
           thumbnail_pathname,
           sort_order
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id
       `,
       [
         input.name,
         input.description,
         input.price,
+        input.sizeOptions,
+        input.colorOptions,
         input.thumbnail?.url ?? null,
         input.thumbnail?.pathname ?? null,
         nextSortOrder,
@@ -683,8 +738,10 @@ export async function updateProductRecord(
           name = $2,
           description = $3,
           price = $4,
-          thumbnail_url = $5,
-          thumbnail_pathname = $6,
+          size_options = $5,
+          color_options = $6,
+          thumbnail_url = $7,
+          thumbnail_pathname = $8,
           updated_at = NOW()
         WHERE id = $1
       `,
@@ -693,6 +750,8 @@ export async function updateProductRecord(
         input.name,
         input.description,
         input.price,
+        input.sizeOptions,
+        input.colorOptions,
         thumbnailUrl,
         thumbnailPathname,
       ],

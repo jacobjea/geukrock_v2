@@ -1,3 +1,5 @@
+import type { ProductColor, ProductSize } from "./product";
+
 export interface ProductImageRecord {
   id: string;
   url: string;
@@ -23,6 +25,8 @@ export interface ProductDetail {
   name: string;
   description: string | null;
   price: number;
+  sizeOptions: ProductSize[];
+  colorOptions: ProductColor[];
   sortOrder: number;
   thumbnailUrl: string | null;
   thumbnailPathname: string | null;
@@ -42,6 +46,8 @@ export interface PaginatedProducts {
 export type ProductFormField =
   | "name"
   | "price"
+  | "sizes"
+  | "colors"
   | "description"
   | "thumbnail"
   | "detailImages";

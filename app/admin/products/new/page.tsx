@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 export default function NewProductPage() {
   return (
     <div className="space-y-6">
-      <section className="border border-[#d9dde3] bg-white px-5 py-4">
-        <h2 className="text-xl font-bold">상품 등록</h2>
+      <section className="border border-[#d9dde3] bg-white px-4 py-4 sm:px-5">
+        <h2 className="break-keep text-lg font-bold sm:text-xl">상품 등록</h2>
         <p className="mt-1 text-sm text-[#6b7280]">
           상품 기본 정보와 이미지를 입력한 뒤 저장하세요.
         </p>
