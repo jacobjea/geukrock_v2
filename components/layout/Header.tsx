@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getCurrentMember } from "@/lib/auth";
 import { navigationItems } from "@/lib/mock-data";
 
 function resolveNavigationHref(href: string) {
@@ -26,7 +27,9 @@ function SearchIcon({ className = "" }: { className?: string }) {
   );
 }
 
-export function Header() {
+export async function Header() {
+  const currentMember = await getCurrentMember();
+
   return (
     <header className="sticky top-0 z-40 border-b border-black/10 bg-background/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-4 sm:px-8 lg:px-12">
@@ -53,7 +56,7 @@ export function Header() {
           <div className="hidden items-center gap-5 text-[11px] font-medium uppercase tracking-[0.26em] text-black/48 lg:flex">
             <span>Seoul</span>
             <span className="h-3 w-px bg-black/10" />
-            <span>Curated Daily</span>
+            {currentMember ? <span>{currentMember.nickname}</span> : <span>Curated Daily</span>}
           </div>
         </div>
 
@@ -75,12 +78,29 @@ export function Header() {
             >
               Cart
             </Link>
-            <Link
-              className="transition-colors duration-300 hover:text-black"
-              href="/#promo"
-            >
-              Campaign
-            </Link>
+            {currentMember ? (
+              <>
+                <Link
+                  className="transition-colors duration-300 hover:text-black"
+                  href="/mypage"
+                >
+                  마이페이지
+                </Link>
+                <Link
+                  className="transition-colors duration-300 hover:text-black"
+                  href="/api/auth/logout?returnTo=/"
+                >
+                  로그아웃
+                </Link>
+              </>
+            ) : (
+              <Link
+                className="transition-colors duration-300 hover:text-black"
+                href="/api/auth/kakao/login?returnTo=/mypage"
+              >
+                카카오 로그인
+              </Link>
+            )}
             <Link
               className="transition-colors duration-300 hover:text-black"
               href="/#footer"
@@ -106,6 +126,29 @@ export function Header() {
           >
             Cart
           </Link>
+          {currentMember ? (
+            <>
+              <Link
+                className="transition-colors duration-300 hover:text-black"
+                href="/mypage"
+              >
+                마이페이지
+              </Link>
+              <Link
+                className="transition-colors duration-300 hover:text-black"
+                href="/api/auth/logout?returnTo=/"
+              >
+                로그아웃
+              </Link>
+            </>
+          ) : (
+            <Link
+              className="transition-colors duration-300 hover:text-black"
+              href="/api/auth/kakao/login?returnTo=/mypage"
+            >
+              카카오 로그인
+            </Link>
+          )}
         </nav>
       </div>
     </header>

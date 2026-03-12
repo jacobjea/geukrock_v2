@@ -8,6 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductPurchasePanel } from "@/components/product/ProductPurchasePanel";
+import { getCurrentMember } from "@/lib/auth";
 import { getStorefrontProductById } from "@/lib/admin/products";
 import { PRODUCT_COLOR_LABELS } from "@/types/product";
 
@@ -41,7 +42,10 @@ export default async function ProductDetailPage({
   params,
 }: ProductDetailPageProps) {
   const { productId } = await params;
-  const product = await getStorefrontProductById(productId);
+  const [product, currentMember] = await Promise.all([
+    getStorefrontProductById(productId),
+    getCurrentMember(),
+  ]);
 
   if (!product) {
     notFound();
@@ -79,6 +83,9 @@ export default async function ProductDetailPage({
               price={product.price}
               sizeOptions={product.sizeOptions}
               colorOptions={product.colorOptions}
+              loginHref={`/api/auth/kakao/login?returnTo=${encodeURIComponent(`/products/${product.id}`)}`}
+              currentMemberName={currentMember?.nickname ?? null}
+              isSignedIn={Boolean(currentMember)}
             />
           </section>
 

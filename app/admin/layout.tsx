@@ -14,7 +14,7 @@ export default function AdminLayout({
               GEUKROCK 관리자
             </h1>
             <span className="mt-1 block text-xs text-[#6b7280] sm:text-sm">
-              상품 관리
+              상품 / 주문 관리
             </span>
           </div>
           <nav className="grid w-full grid-cols-2 gap-2 text-sm sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
@@ -22,17 +22,17 @@ export default function AdminLayout({
               href="/admin"
               className="inline-flex items-center justify-center rounded border border-[#d9dde3] bg-white px-3 py-2 text-center hover:bg-[#f7f8fa]"
             >
-              상품 목록
+              상품 관리
             </Link>
             <Link
-              href="/admin/products/new"
+              href="/admin/orders"
               className="inline-flex items-center justify-center rounded border border-[#d9dde3] bg-white px-3 py-2 text-center hover:bg-[#f7f8fa]"
             >
-              상품 등록
+              주문 관리
             </Link>
             <Link
               href="/"
-              className="col-span-2 inline-flex items-center justify-center rounded border border-[#d9dde3] bg-white px-3 py-2 text-center hover:bg-[#f7f8fa] sm:col-span-1"
+              className="inline-flex items-center justify-center rounded border border-[#d9dde3] bg-white px-3 py-2 text-center hover:bg-[#f7f8fa]"
             >
               쇼핑몰 이동
             </Link>

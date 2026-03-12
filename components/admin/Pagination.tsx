@@ -3,10 +3,34 @@ import Link from "next/link";
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
+  basePath?: string;
+  query?: Record<string, string | number | undefined>;
+  ariaLabel?: string;
 }
 
-function getPageHref(page: number) {
-  return page <= 1 ? "/admin" : `/admin?page=${page}`;
+function getPageHref(
+  page: number,
+  basePath: string,
+  query: Record<string, string | number | undefined>,
+) {
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+
+    searchParams.set(key, String(value));
+  }
+
+  if (page > 1) {
+    searchParams.set("page", String(page));
+  } else {
+    searchParams.delete("page");
+  }
+
+  const queryString = searchParams.toString();
+  return queryString ? `${basePath}?${queryString}` : basePath;
 }
 
 function getPageNumbers(currentPage: number, totalPages: number) {
@@ -14,7 +38,13 @@ function getPageNumbers(currentPage: number, totalPages: number) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
 
-  const pages = new Set<number>([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const pages = new Set<number>([
+    1,
+    totalPages,
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+  ]);
 
   for (const page of [...pages]) {
     if (page < 1 || page > totalPages) {
@@ -39,7 +69,13 @@ function getPaginationTokens(currentPage: number, totalPages: number) {
   });
 }
 
-export function Pagination({ currentPage, totalPages }: PaginationProps) {
+export function Pagination({
+  currentPage,
+  totalPages,
+  basePath = "/admin",
+  query = {},
+  ariaLabel = "페이지 이동",
+}: PaginationProps) {
   if (totalPages <= 1) {
     return null;
   }
@@ -47,9 +83,9 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
   const tokens = getPaginationTokens(currentPage, totalPages);
 
   return (
-    <nav aria-label="상품 목록 페이지 이동" className="flex flex-wrap items-center gap-1">
+    <nav aria-label={ariaLabel} className="flex flex-wrap items-center gap-1">
       <Link
-        href={getPageHref(Math.max(1, currentPage - 1))}
+        href={getPageHref(Math.max(1, currentPage - 1), basePath, query)}
         className="rounded border border-[#d9dde3] bg-white px-3 py-2 text-sm hover:bg-[#f7f8fa]"
       >
         이전
@@ -71,7 +107,7 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
         return (
           <span key={token} className="contents">
             <Link
-              href={getPageHref(token)}
+              href={getPageHref(token, basePath, query)}
               aria-current={token === currentPage ? "page" : undefined}
               className={[
                 "rounded px-3 py-2 text-sm",
@@ -87,7 +123,7 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
       })}
 
       <Link
-        href={getPageHref(Math.min(totalPages, currentPage + 1))}
+        href={getPageHref(Math.min(totalPages, currentPage + 1), basePath, query)}
         className="rounded border border-[#d9dde3] bg-white px-3 py-2 text-sm hover:bg-[#f7f8fa]"
       >
         다음
