@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 
+import { getResizedImageUrl } from "@/lib/image-url";
 import type { StorefrontProductImage } from "@/types/product";
 
 interface ProductImageGalleryProps {
@@ -45,7 +46,7 @@ export function ProductImageGallery({
               }`}
             >
               <img
-                src={image.url}
+                src={getResizedImageUrl(image.url, 184) ?? image.url}
                 alt={`${productName} 썸네일 ${index + 1}`}
                 className="h-20 w-20 object-cover lg:h-[92px] lg:w-[92px]"
               />
@@ -60,7 +61,7 @@ export function ProductImageGallery({
       <div className="order-1 overflow-hidden border border-black/10 bg-white lg:order-2">
         <div className="relative aspect-[4/5] bg-[#f5f3ee]">
           <img
-            src={selectedImage.url}
+            src={getResizedImageUrl(selectedImage.url, 1400) ?? selectedImage.url}
             alt={productName}
             className="h-full w-full object-cover"
           />

@@ -10,6 +10,7 @@ import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductPurchasePanel } from "@/components/product/ProductPurchasePanel";
 import { getCurrentMember } from "@/lib/auth";
 import { getStorefrontProductById } from "@/lib/admin/products";
+import { getResizedImageUrl } from "@/lib/image-url";
 import { PRODUCT_COLOR_LABELS } from "@/types/product";
 
 export const dynamic = "force-dynamic";
@@ -133,10 +134,6 @@ export default async function ProductDetailPage({
               <div className="border border-black/10 bg-white px-5 py-5">
                 <p className="text-[15px] font-semibold text-black">상품 기본 정보</p>
                 <dl className="mt-4 space-y-3 text-[15px] text-black/72">
-                  <div className="flex items-center justify-between gap-4 border-b border-black/6 pb-3">
-                    <dt>대표 이미지</dt>
-                    <dd>{product.thumbnailUrl ? "등록됨" : "없음"}</dd>
-                  </div>
                   <div className="flex items-start justify-between gap-4 border-b border-black/6 pb-3">
                     <dt>사이즈</dt>
                     <dd className="text-right">{product.sizeOptions.join(", ")}</dd>
@@ -172,10 +169,6 @@ export default async function ProductDetailPage({
                   상세 이미지
                 </h2>
               </div>
-              <p className="text-[15px] text-black/68">
-                상세 이미지는 아래로 길게 이어지는 한국형 상품 상세 흐름으로
-                배치했습니다.
-              </p>
             </div>
 
             {detailImages.length ? (
@@ -186,7 +179,7 @@ export default async function ProductDetailPage({
                     className="overflow-hidden border border-black/10 bg-white"
                   >
                     <img
-                      src={image.url}
+                      src={getResizedImageUrl(image.url, 1240) ?? image.url}
                       alt={`${product.name} 상세 이미지 ${index + 1}`}
                       className="w-full object-cover"
                     />

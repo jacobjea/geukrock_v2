@@ -11,6 +11,7 @@ import {
   reorderProductsAction,
 } from "@/app/admin/products/actions";
 import { formatDate, formatPrice } from "@/lib/admin/format";
+import { getResizedImageUrl } from "@/lib/image-url";
 import {
   formatSalePeriod,
   getProductSaleStatus,
@@ -262,21 +263,24 @@ export function ProductListTable({
                   </td>
                   <td className={`${rowCellClass} ${middleCellHighlightClass} px-4 py-4`}>
                     <div className="flex min-w-72 items-center gap-3">
-                      <div
-                        className={`flex h-16 w-16 items-center justify-center overflow-hidden border bg-[#f9fafb] ${
+                      <Link
+                        href={`/products/${item.id}`}
+                        aria-label={`${item.name} 상품 상세 페이지로 이동`}
+                        title="스토어 상품 페이지로 이동"
+                        className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border bg-[#f9fafb] transition-transform duration-200 hover:scale-[1.02] ${
                           isHighlighted ? "border-[#b7d4ff]" : "border-[#e5e7eb]"
                         }`}
                       >
                         {item.thumbnailUrl ? (
                           <img
-                            src={item.thumbnailUrl}
+                            src={getResizedImageUrl(item.thumbnailUrl, 192) ?? item.thumbnailUrl}
                             alt={item.name}
                             className="h-full w-full object-cover"
                           />
                         ) : (
                           <span className="text-[11px] text-[#9ca3af]">없음</span>
                         )}
-                      </div>
+                      </Link>
                       <div className="space-y-1">
                         <p className="font-medium">{item.name}</p>
                         <p className="max-w-xl text-xs text-[#6b7280]">

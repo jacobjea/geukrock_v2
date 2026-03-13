@@ -463,7 +463,7 @@ export function ProductPurchasePanel({
                     {canPurchase
                       ? hasSelectedItems
                         ? "주문하기"
-                        : "옵션을 먼저 선택해 주세요"
+                        : "옵션을 선택 후 주문"
                       : saleStatus.state === "upcoming"
                         ? "판매 시작 전"
                         : "판매 종료"}
@@ -510,7 +510,7 @@ export function ProductPurchasePanel({
         <ul className="mt-3 space-y-2 text-[15px] leading-7 text-black/72">
           <li>전자결제 대신 주문 접수 후 계좌이체 방식으로 운영됩니다.</li>
           <li>입금자명은 실제 송금하실 이름으로 정확히 입력해 주세요.</li>
-          <li>카카오 로그인 회원은 마이페이지에서 주문 내역을 확인할 수 있습니다.</li>
+          <li>마이페이지에서 주문 내역을 확인할 수 있습니다.</li>
         </ul>
       </div>
     </aside>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 
 import { formatPrice } from "@/lib/admin/format";
+import { getResizedImageUrl } from "@/lib/image-url";
 import type { GuestCartSnapshot } from "@/types/cart";
 import { PRODUCT_COLOR_LABELS } from "@/types/product";
 
@@ -259,7 +260,7 @@ export function CartPageContent({
                   >
                     {item.thumbnailUrl ? (
                       <img
-                        src={item.thumbnailUrl}
+                        src={getResizedImageUrl(item.thumbnailUrl, 480) ?? item.thumbnailUrl}
                         alt={item.productName}
                         className="aspect-[4/5] h-full w-full object-cover"
                       />

@@ -8,6 +8,7 @@ import { useActionState, useState } from "react";
 import { createOrderAction } from "@/app/orders/actions";
 import { TransferPaymentPanel } from "@/components/order/TransferPaymentPanel";
 import { formatPrice } from "@/lib/admin/format";
+import { getResizedImageUrl } from "@/lib/image-url";
 import {
   calculateOrderTotalPrice,
   serializeOrderLineItems,
@@ -269,7 +270,10 @@ export function OrderCheckoutPage({
               <div className="overflow-hidden border border-black/10 bg-[#f5f3ee]">
                 {productThumbnailUrl ? (
                   <img
-                    src={productThumbnailUrl}
+                    src={
+                      getResizedImageUrl(productThumbnailUrl, 480) ??
+                      productThumbnailUrl
+                    }
                     alt={productName}
                     className="aspect-square h-full w-full object-cover"
                   />
@@ -340,7 +344,7 @@ export function OrderCheckoutPage({
           <ul className="mt-3 space-y-2 text-[15px] leading-7 text-black/72">
             <li>전자결제 대신 주문 접수 후 계좌이체 방식으로 운영됩니다.</li>
             <li>입금자명은 실제 송금하실 이름으로 정확히 입력해 주세요.</li>
-            <li>주문 완료 후 안내된 계좌 정보로 입금해 주시면 됩니다.</li>
+            <li>마이페이지에서 주문 내역을 확인할 수 있습니다.</li>
           </ul>
         </section>
       </aside>

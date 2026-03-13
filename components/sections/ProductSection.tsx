@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { getResizedImageUrl } from "@/lib/image-url";
 import type { StorefrontProduct } from "@/types/product";
 
 interface ProductSectionProps {
@@ -20,7 +21,7 @@ function ProductCard({ product }: { product: StorefrontProduct }) {
         <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] border border-black/10 bg-black/[0.04] transition-transform duration-300 group-hover:-translate-y-1">
           {product.thumbnailUrl ? (
             <img
-              src={product.thumbnailUrl}
+              src={getResizedImageUrl(product.thumbnailUrl, 960) ?? product.thumbnailUrl}
               alt={product.name}
               className="h-full w-full object-cover"
             />

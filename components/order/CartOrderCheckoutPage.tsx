@@ -8,6 +8,7 @@ import { useActionState, useState } from "react";
 import { createCartOrderAction } from "@/app/orders/actions";
 import { TransferPaymentPanel } from "@/components/order/TransferPaymentPanel";
 import { formatPrice } from "@/lib/admin/format";
+import { getResizedImageUrl } from "@/lib/image-url";
 import { serializeCartOrderLineItems } from "@/lib/order-line-items";
 import type { CartCheckoutSnapshot } from "@/types/cart";
 import {
@@ -276,7 +277,7 @@ export function CartOrderCheckoutPage({
                 <div className="h-[72px] w-[72px] shrink-0 overflow-hidden border border-black/10 bg-[#f5f3ee]">
                   {item.thumbnailUrl ? (
                     <img
-                      src={item.thumbnailUrl}
+                      src={getResizedImageUrl(item.thumbnailUrl, 240) ?? item.thumbnailUrl}
                       alt={item.productName}
                       className="h-full w-full object-cover"
                     />
