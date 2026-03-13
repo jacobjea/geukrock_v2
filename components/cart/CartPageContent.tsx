@@ -366,13 +366,15 @@ export function CartPageContent({
               </div>
             </div>
 
-            <button
-              type="button"
-              disabled
-              className="mt-5 inline-flex h-12 w-full items-center justify-center bg-black text-[15px] font-medium text-white"
-            >
-              주문하기 준비 중
-            </button>
+            <form action="/orders/start" method="post" className="mt-5">
+              <input type="hidden" name="checkoutMode" value="cart" />
+              <button
+                type="submit"
+                className="inline-flex h-12 w-full items-center justify-center bg-black text-[15px] font-medium text-white hover:bg-black/92"
+              >
+                주문하기
+              </button>
+            </form>
 
             <Link
               href="/#new-in"

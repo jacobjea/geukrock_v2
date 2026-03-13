@@ -52,6 +52,10 @@ export interface OrderLineItemInput {
   selectedColor: ProductColor;
 }
 
+export interface CartOrderLineItemInput extends OrderLineItemInput {
+  productId: string;
+}
+
 export interface CreateOrderInput extends OrderLineItemInput {
   productId: string;
   memberUserId?: string | null;

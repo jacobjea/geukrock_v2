@@ -5,20 +5,17 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 
-import { createOrderAction } from "@/app/orders/actions";
+import { createCartOrderAction } from "@/app/orders/actions";
 import { TransferPaymentPanel } from "@/components/order/TransferPaymentPanel";
 import { formatPrice } from "@/lib/admin/format";
-import {
-  calculateOrderTotalPrice,
-  serializeOrderLineItems,
-} from "@/lib/order-line-items";
+import { serializeCartOrderLineItems } from "@/lib/order-line-items";
+import type { CartCheckoutSnapshot } from "@/types/cart";
 import {
   initialOrderFormState,
-  type OrderLineItemInput,
+  type CartOrderLineItemInput,
 } from "@/types/order";
 import {
   PRODUCT_COLOR_LABELS,
-  PRODUCT_COLOR_SWATCHES,
 } from "@/types/product";
 
 interface TransferRecipientInfo {
@@ -27,40 +24,38 @@ interface TransferRecipientInfo {
   accountHolder: string;
 }
 
-interface OrderCheckoutPageProps {
-  productId: string;
-  productName: string;
-  productDescription: string | null;
-  productThumbnailUrl: string | null;
-  productPrice: number;
-  selectedItems: OrderLineItemInput[];
+interface CartOrderCheckoutPageProps {
+  cart: CartCheckoutSnapshot;
   currentMemberName?: string | null;
-  productHref: string;
+  isSignedIn: boolean;
   transferRecipientInfo?: TransferRecipientInfo | null;
 }
 
-export function OrderCheckoutPage({
-  productId,
-  productName,
-  productDescription,
-  productThumbnailUrl,
-  productPrice,
-  selectedItems,
+function buildCartOrderItems(cart: CartCheckoutSnapshot): CartOrderLineItemInput[] {
+  return cart.items.map((item) => ({
+    productId: item.productId,
+    selectedSize: item.selectedSize,
+    selectedColor: item.selectedColor,
+    quantity: item.quantity,
+  }));
+}
+
+export function CartOrderCheckoutPage({
+  cart,
   currentMemberName,
-  productHref,
+  isSignedIn,
   transferRecipientInfo,
-}: OrderCheckoutPageProps) {
+}: CartOrderCheckoutPageProps) {
   const [customerName, setCustomerName] = useState(currentMemberName ?? "");
   const [customerPhone, setCustomerPhone] = useState("");
   const [depositorName, setDepositorName] = useState(currentMemberName ?? "");
   const [note, setNote] = useState("");
   const [formState, formAction, isPending] = useActionState(
-    createOrderAction,
+    createCartOrderAction,
     initialOrderFormState,
   );
-  const orderTotalPrice =
-    formState.totalAmount ?? calculateOrderTotalPrice(selectedItems, productPrice);
-  const serializedLineItems = serializeOrderLineItems(selectedItems);
+  const cartOrderItems = buildCartOrderItems(cart);
+  const serializedCartLineItems = serializeCartOrderLineItems(cartOrderItems);
   const submittedOrderCodes =
     formState.orderCodes && formState.orderCodes.length > 0
       ? formState.orderCodes
@@ -78,7 +73,7 @@ export function OrderCheckoutPage({
       : null);
 
   return (
-    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
       <section className="border border-black/10 bg-white">
         <div className="border-b border-black/8 px-6 py-6">
           <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-black/62">
@@ -95,8 +90,17 @@ export function OrderCheckoutPage({
         </div>
 
         <div className="px-6 py-6">
-          <div className="border border-[#d7e4ff] bg-[#f5f8ff] px-4 py-4 text-sm leading-6 text-[#32508a]">
-            마이페이지에서 주문 내역을 바로 확인할 수 있습니다.
+          <div
+            className={[
+              "border px-4 py-4 text-sm leading-6",
+              isSignedIn
+                ? "border-[#d7e4ff] bg-[#f5f8ff] text-[#32508a]"
+                : "border-[#e5e7eb] bg-[#f7f8fa] text-[#4b5563]",
+            ].join(" ")}
+          >
+            {isSignedIn
+              ? "카카오 로그인 상태로 주문하면 마이페이지에서 주문 내역을 바로 확인할 수 있습니다."
+              : "비회원 주문도 가능하지만 주문 내역은 마이페이지에 자동 연동되지 않습니다."}
           </div>
 
           {formState.message ? (
@@ -115,7 +119,7 @@ export function OrderCheckoutPage({
 
           {formState.status === "success" && resolvedTransferInfo ? (
             <TransferPaymentPanel
-              amount={formState.totalAmount ?? orderTotalPrice}
+              amount={formState.totalAmount ?? cart.subtotal}
               bankName={resolvedTransferInfo.bankName}
               accountNumber={resolvedTransferInfo.accountNumber}
               accountHolder={resolvedTransferInfo.accountHolder}
@@ -126,22 +130,21 @@ export function OrderCheckoutPage({
           {formState.status === "success" ? (
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Link
-                href={productHref}
+                href="/cart"
                 className="inline-flex h-12 w-full items-center justify-center border border-black/12 bg-white text-[15px] font-medium text-black hover:bg-black/[0.03]"
               >
-                상품 페이지로 돌아가기
+                장바구니 보기
               </Link>
               <Link
-                href="/mypage"
+                href={isSignedIn ? "/mypage" : "/"}
                 className="inline-flex h-12 w-full items-center justify-center bg-black text-[15px] font-medium text-white hover:bg-black/92"
               >
-                마이페이지에서 확인하기
+                {isSignedIn ? "마이페이지에서 확인하기" : "메인 홈으로 이동"}
               </Link>
             </div>
           ) : (
             <form action={formAction} className="mt-5 space-y-4">
-              <input type="hidden" name="productId" value={productId} />
-              <input type="hidden" name="lineItems" value={serializedLineItems} />
+              <input type="hidden" name="cartLineItems" value={serializedCartLineItems} />
 
               {formState.fieldErrors.lineItems ? (
                 <p className="text-sm text-[#d14343]">
@@ -235,10 +238,10 @@ export function OrderCheckoutPage({
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <Link
-                  href={productHref}
+                  href="/cart"
                   className="inline-flex h-12 w-full items-center justify-center border border-black/12 bg-white text-[15px] font-medium text-black hover:bg-black/[0.03]"
                 >
-                  상품 페이지로 돌아가기
+                  장바구니 보기
                 </Link>
                 <button
                   type="submit"
@@ -261,87 +264,57 @@ export function OrderCheckoutPage({
       <aside className="space-y-4 xl:sticky xl:top-28">
         <section className="border border-black/10 bg-white">
           <div className="border-b border-black/8 px-5 py-4">
-            <p className="text-[15px] font-semibold text-black">주문 상품</p>
+            <p className="text-[15px] font-semibold text-black">주문 상품 요약</p>
           </div>
 
-          <div className="px-5 py-5">
-            <div className="grid gap-4 sm:grid-cols-[120px_minmax(0,1fr)] xl:grid-cols-1">
-              <div className="overflow-hidden border border-black/10 bg-[#f5f3ee]">
-                {productThumbnailUrl ? (
-                  <img
-                    src={productThumbnailUrl}
-                    alt={productName}
-                    className="aspect-square h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex aspect-square items-center justify-center text-[13px] text-black/42">
-                    이미지 준비 중
-                  </div>
-                )}
-              </div>
-
-              <div className="min-w-0">
-                <p className="text-[1.02rem] font-semibold text-black">
-                  {productName}
-                </p>
-                <p className="mt-2 text-[15px] font-medium text-black">
-                  {formatPrice(productPrice)}
-                </p>
-                <p className="mt-2 text-[14px] leading-6 text-black/68">
-                  {productDescription || "등록된 상품 설명이 없습니다."}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="border border-black/10 bg-[#f7f7f5] px-5 py-5">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-[15px] font-semibold text-black">선택된 주문 옵션</p>
-            <strong className="text-[1.1rem] font-semibold text-black">
-              {formatPrice(orderTotalPrice)}
-            </strong>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {selectedItems.map((item, index) => (
+          <div className="space-y-3 px-5 py-5">
+            {cart.items.map((item) => (
               <div
-                key={`${item.selectedColor}-${item.selectedSize}-${index}`}
-                className="flex items-start justify-between gap-4 border-t border-black/8 pt-3 first:border-t-0 first:pt-0"
+                key={item.itemId}
+                className="flex items-start gap-3 border-b border-black/8 pb-3 last:border-b-0 last:pb-0"
               >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span
-                      aria-hidden="true"
-                      className="h-3.5 w-3.5 rounded-full border border-black/10"
-                      style={{
-                        backgroundColor:
-                          PRODUCT_COLOR_SWATCHES[item.selectedColor],
-                      }}
+                <div className="h-[72px] w-[72px] shrink-0 overflow-hidden border border-black/10 bg-[#f5f3ee]">
+                  {item.thumbnailUrl ? (
+                    <img
+                      src={item.thumbnailUrl}
+                      alt={item.productName}
+                      className="h-full w-full object-cover"
                     />
-                    <p className="text-[15px] font-medium text-black">
-                      {PRODUCT_COLOR_LABELS[item.selectedColor]}, {item.selectedSize}
-                    </p>
-                  </div>
-                  <p className="mt-1 text-[14px] text-black/68">
-                    수량 {item.quantity}개
-                  </p>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-[11px] text-black/40">
+                      No Image
+                    </div>
+                  )}
                 </div>
-                <strong className="shrink-0 text-[15px] font-semibold text-black">
-                  {formatPrice(productPrice * item.quantity)}
-                </strong>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-semibold text-black">
+                    {item.productName}
+                  </p>
+                  <p className="mt-1 text-[13px] text-black/62">
+                    {item.selectedSize} / {PRODUCT_COLOR_LABELS[item.selectedColor]} /{" "}
+                    {item.quantity}개
+                  </p>
+                  <strong className="mt-2 block text-[15px] font-semibold text-black">
+                    {formatPrice(item.lineTotal)}
+                  </strong>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="border border-black/10 bg-[#f7f4ee] px-5 py-5">
-          <p className="text-[15px] font-semibold text-black">주문 안내</p>
-          <ul className="mt-3 space-y-2 text-[15px] leading-7 text-black/72">
-            <li>전자결제 대신 주문 접수 후 계좌이체 방식으로 운영됩니다.</li>
-            <li>입금자명은 실제 송금하실 이름으로 정확히 입력해 주세요.</li>
-            <li>주문 완료 후 안내된 계좌 정보로 입금해 주시면 됩니다.</li>
-          </ul>
+        <section className="border border-black/10 bg-[#f7f7f5] px-5 py-5">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[15px] font-semibold text-black">총 주문 금액</p>
+            <strong className="text-[1.15rem] font-semibold text-black">
+              {formatPrice(formState.totalAmount ?? cart.subtotal)}
+            </strong>
+          </div>
+          <div className="mt-3 space-y-2 text-[14px] leading-6 text-black/68">
+            <p>상품 수량 합계: {cart.totalItems}개</p>
+            <p>장바구니 상품을 한 번에 주문서로 접수합니다.</p>
+          </div>
         </section>
       </aside>
     </div>

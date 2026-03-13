@@ -261,14 +261,14 @@ export function ProductPurchasePanel({
           </div>
         ) : (
           <div className="mb-4 border border-[#e5e7eb] bg-[#f7f8fa] px-4 py-3 text-sm text-[#4b5563]">
-            주문은 로그인 없이도 가능하지만,{" "}
+            주문과 장바구니는 로그인 후 이용할 수 있습니다.{" "}
             <form action={signInWithKakaoAction} className="inline">
               <input type="hidden" name="returnTo" value={loginReturnTo} />
               <button type="submit" className="font-medium text-[#2f6fed]">
                 카카오 로그인
               </button>
             </form>
-            후 주문하면 마이페이지에서 주문 내역을 확인할 수 있습니다.
+            후 주문 내역을 마이페이지에서 확인할 수 있습니다.
           </div>
         )}
 
@@ -431,48 +431,75 @@ export function ProductPurchasePanel({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <form action={addToCartAction}>
-              <input type="hidden" name="productId" value={productId} />
-              <input type="hidden" name="lineItems" value={serializedLineItems} />
-              <button
-                type="submit"
-                disabled={!hasSelectedItems || !canPurchase}
-                className="inline-flex h-12 w-full items-center justify-center border border-black/12 bg-[#f6f4ef] text-[15px] font-medium text-black hover:bg-[#efebe3] disabled:cursor-not-allowed disabled:border-black/8 disabled:bg-black/[0.04] disabled:text-black/38"
-              >
-                {canPurchase
-                  ? hasSelectedItems
-                  ? isSignedIn
-                    ? "장바구니 담기"
-                    : "로그인 후 장바구니 담기"
-                  : "옵션 선택 후 담기"
-                  : saleStatus.state === "upcoming"
-                    ? "판매 시작 전"
-                    : "판매 종료"}
-              </button>
-            </form>
+            {isSignedIn ? (
+              <>
+                <form action={addToCartAction}>
+                  <input type="hidden" name="productId" value={productId} />
+                  <input type="hidden" name="lineItems" value={serializedLineItems} />
+                  <button
+                    type="submit"
+                    disabled={!hasSelectedItems || !canPurchase}
+                    className="inline-flex h-12 w-full items-center justify-center border border-black/12 bg-[#f6f4ef] text-[15px] font-medium text-black hover:bg-[#efebe3] disabled:cursor-not-allowed disabled:border-black/8 disabled:bg-black/[0.04] disabled:text-black/38"
+                  >
+                    {canPurchase
+                      ? hasSelectedItems
+                        ? "장바구니 담기"
+                        : "옵션 선택 후 담기"
+                      : saleStatus.state === "upcoming"
+                        ? "판매 시작 전"
+                        : "판매 종료"}
+                  </button>
+                </form>
 
-            <form action="/orders" method="get">
-              <input type="hidden" name="productId" value={productId} />
-              <input type="hidden" name="lineItems" value={serializedLineItems} />
-              <button
-                type="submit"
-                disabled={!hasSelectedItems || !canPurchase}
-                className="inline-flex h-12 w-full items-center justify-center bg-black text-[15px] font-medium text-white hover:bg-black/92 disabled:cursor-not-allowed disabled:bg-black/45"
-              >
-                {canPurchase
-                  ? hasSelectedItems
-                    ? "주문하기"
-                    : "옵션을 먼저 선택해 주세요"
-                  : saleStatus.state === "upcoming"
-                    ? "판매 시작 전"
-                    : "판매 종료"}
-              </button>
-            </form>
+                <form action="/orders/start" method="post">
+                  <input type="hidden" name="checkoutMode" value="direct" />
+                  <input type="hidden" name="productId" value={productId} />
+                  <input type="hidden" name="lineItems" value={serializedLineItems} />
+                  <button
+                    type="submit"
+                    disabled={!hasSelectedItems || !canPurchase}
+                    className="inline-flex h-12 w-full items-center justify-center bg-black text-[15px] font-medium text-white hover:bg-black/92 disabled:cursor-not-allowed disabled:bg-black/45"
+                  >
+                    {canPurchase
+                      ? hasSelectedItems
+                        ? "주문하기"
+                        : "옵션을 먼저 선택해 주세요"
+                      : saleStatus.state === "upcoming"
+                        ? "판매 시작 전"
+                        : "판매 종료"}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <form action={signInWithKakaoAction}>
+                  <input type="hidden" name="returnTo" value={loginReturnTo} />
+                  <button
+                    type="submit"
+                    className="inline-flex h-12 w-full items-center justify-center border border-black/12 bg-[#f6f4ef] text-[15px] font-medium text-black hover:bg-[#efebe3]"
+                  >
+                    로그인 후 장바구니 담기
+                  </button>
+                </form>
+
+                <form action={signInWithKakaoAction}>
+                  <input type="hidden" name="returnTo" value={loginReturnTo} />
+                  <button
+                    type="submit"
+                    className="inline-flex h-12 w-full items-center justify-center bg-black text-[15px] font-medium text-white hover:bg-black/92"
+                  >
+                    로그인 후 주문하기
+                  </button>
+                </form>
+              </>
+            )}
           </div>
 
           <p className="text-[13px] leading-6 text-black/58">
             {canPurchase
-              ? "주문하기 버튼을 누르면 주문 페이지로 이동하고, 접수 후 안내된 계좌로 입금해 주시면 관리자 페이지에서 입금 확인 처리합니다."
+              ? isSignedIn
+                ? "주문하기 버튼을 누르면 주문 페이지로 이동하고, 접수 후 안내된 계좌로 입금해 주시면 관리자 페이지에서 입금 확인 처리합니다."
+                : "로그인 후 주문 페이지와 장바구니 기능을 이용할 수 있습니다."
               : "설정된 판매 기간 안에서만 장바구니와 주문 접수가 가능합니다."}
           </p>
         </div>

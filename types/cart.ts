@@ -27,3 +27,8 @@ export interface GuestCartSnapshot {
   expiresAt: string;
   lastAccessedAt: string;
 }
+
+export type CartCheckoutSnapshot = Pick<
+  GuestCartSnapshot,
+  "items" | "totalItems" | "subtotal"
+>;

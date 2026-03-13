@@ -1,4 +1,7 @@
-import type { OrderLineItemInput } from "@/types/order";
+import type {
+  CartOrderLineItemInput,
+  OrderLineItemInput,
+} from "@/types/order";
 import {
   isProductColor,
   isProductSize,
@@ -29,6 +32,17 @@ export function serializeOrderLineItems(
 ) {
   return JSON.stringify(
     items.map(({ selectedSize, selectedColor, quantity }) => ({
+      selectedSize,
+      selectedColor,
+      quantity,
+    })),
+  );
+}
+
+export function serializeCartOrderLineItems(items: CartOrderLineItemInput[]) {
+  return JSON.stringify(
+    items.map(({ productId, selectedSize, selectedColor, quantity }) => ({
+      productId,
       selectedSize,
       selectedColor,
       quantity,
@@ -105,6 +119,88 @@ export function parseOrderLineItems(value: string): ParsedOrderLineItemsResult {
     return {
       ok: false,
       message: "선택한 옵션 정보를 다시 확인해 주세요.",
+    };
+  }
+}
+
+export function parseCartOrderLineItems(value: string) {
+  if (!value) {
+    return {
+      ok: false as const,
+      message: "주문할 장바구니 상품이 없습니다.",
+    };
+  }
+
+  const parsedItems = parseOrderLineItems(
+    JSON.stringify(
+      (() => {
+        try {
+          const raw = JSON.parse(value) as unknown;
+
+          if (!Array.isArray(raw)) {
+            return [];
+          }
+
+          return raw.map((item) => {
+            if (!item || typeof item !== "object") {
+              return item;
+            }
+
+            const candidate = item as Record<string, unknown>;
+            return {
+              productId:
+                typeof candidate.productId === "string" ? candidate.productId : "",
+              selectedSize: candidate.selectedSize,
+              selectedColor: candidate.selectedColor,
+              quantity: candidate.quantity,
+            };
+          });
+        } catch {
+          return [];
+        }
+      })(),
+    ),
+  );
+
+  if (!parsedItems.ok) {
+    return parsedItems;
+  }
+
+  try {
+    const raw = JSON.parse(value) as unknown;
+
+    if (!Array.isArray(raw) || raw.length !== parsedItems.items.length) {
+      return {
+        ok: false as const,
+        message: "장바구니 주문 정보를 다시 확인해 주세요.",
+      };
+    }
+
+    const items: CartOrderLineItemInput[] = parsedItems.items.map((item, index) => {
+      const candidate = raw[index] as Record<string, unknown>;
+      const productId =
+        typeof candidate.productId === "string" ? candidate.productId.trim() : "";
+
+      if (!productId) {
+        throw new Error("invalid-product-id");
+      }
+
+      return {
+        productId,
+        selectedSize: item.selectedSize,
+        selectedColor: item.selectedColor,
+        quantity: item.quantity,
+      };
+    });
+
+    return {
+      ok: true as const,
+      items,
+    };
+  } catch {
+    return {
+      ok: false as const,
+      message: "장바구니 주문 정보를 다시 확인해 주세요.",
     };
   }
 }

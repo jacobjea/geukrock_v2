@@ -13,6 +13,7 @@ import {
   type ProductSize,
 } from "@/types/product";
 import type {
+  CartOrderLineItemInput,
   CreateOrderInput,
   CreatedOrderResult,
   OrderBankAccountInfo,
@@ -527,6 +528,55 @@ export async function createOrderRecord(
   });
 
   return createdOrder;
+}
+
+export async function createCartOrderRecords(input: {
+  memberUserId?: string | null;
+  customerName: string;
+  customerPhone: string;
+  depositorName: string;
+  note: string | null;
+  items: CartOrderLineItemInput[];
+}): Promise<CreatedOrderResult[]> {
+  await ensureOrderSchema();
+
+  return withTransaction(async (client) => {
+    const bankInfo = getOrderBankAccountInfo();
+    const createdOrders: CreatedOrderResult[] = [];
+    const productCache = new Map<string, ProductOrderRow>();
+
+    for (const item of input.items) {
+      let product = productCache.get(item.productId);
+
+      if (!product) {
+        product = await getProductForOrder(client, item.productId);
+        productCache.set(item.productId, product);
+      }
+
+      validateOrderLineItem(product, item);
+
+      createdOrders.push(
+        await insertOrderRecord(
+          client,
+          product,
+          {
+            productId: item.productId,
+            memberUserId: input.memberUserId ?? null,
+            customerName: input.customerName,
+            customerPhone: input.customerPhone,
+            depositorName: input.depositorName,
+            note: input.note,
+            quantity: item.quantity,
+            selectedSize: item.selectedSize,
+            selectedColor: item.selectedColor,
+          },
+          bankInfo,
+        ),
+      );
+    }
+
+    return createdOrders;
+  });
 }
 
 export async function listOrdersByMemberUserId(

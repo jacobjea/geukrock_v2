@@ -5,10 +5,14 @@ import Link from "next/link";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { CopyableMemberId } from "@/components/mypage/CopyableMemberId";
+import { OrderTransferButton } from "@/components/mypage/OrderTransferButton";
 import { signInWithKakaoAction } from "@/lib/auth-actions";
 import { formatDateTime, formatPrice } from "@/lib/admin/format";
 import { listOrdersByMemberUserId } from "@/lib/admin/orders";
 import { getCurrentMember } from "@/lib/auth";
+import {
+  getTossRecipientInfo,
+} from "@/lib/toss-transfer";
 import {
   ORDER_PAYMENT_STATUS_LABELS,
   ORDER_STATUS_LABELS,
@@ -46,6 +50,12 @@ function getLoginDebugMessage(error?: string) {
   return error ?? null;
 }
 
+function getPaymentStatusBadgeClass(paymentStatus: "awaiting_deposit" | "confirmed") {
+  return paymentStatus === "confirmed"
+    ? "border-[#cfe7c8] bg-[#eef8e9] text-[#2f6b2d]"
+    : "border-[#f0d7b8] bg-[#fff6ea] text-[#9a5a18]";
+}
+
 interface MyPageProps {
   searchParams: Promise<{
     login?: string;
@@ -63,6 +73,7 @@ export default async function MyPage({ searchParams }: MyPageProps) {
   const orders = currentMember
     ? await listOrdersByMemberUserId(currentMember.id)
     : [];
+  const tossRecipientInfo = getTossRecipientInfo();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -160,8 +171,85 @@ export default async function MyPage({ searchParams }: MyPageProps) {
                 </div>
 
                 {orders.length ? (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full border-collapse text-[15px]">
+                  <>
+                    <div className="divide-y divide-black/8 md:hidden">
+                      {orders.map((order) => {
+                        const canShowTransferButton =
+                          Boolean(tossRecipientInfo) &&
+                          order.paymentStatus === "awaiting_deposit" &&
+                          order.orderStatus === "received";
+
+                        return (
+                          <article key={order.id} className="px-5 py-5">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <p className="text-[15px] font-semibold text-black">
+                                  {formatDateTime(order.createdAt)}
+                                </p>
+                                <p className="mt-1 text-[13px] text-black/56">
+                                  {order.orderCode}
+                                </p>
+                              </div>
+                              <strong className="shrink-0 text-[1rem] font-semibold text-black">
+                                {formatPrice(order.totalAmount)}
+                              </strong>
+                            </div>
+
+                            <div className="mt-4 space-y-1">
+                              {order.productId ? (
+                                <Link
+                                  href={`/products/${order.productId}`}
+                                  className="text-[15px] font-semibold text-black hover:text-[#2f6fed]"
+                                >
+                                  {order.productName}
+                                </Link>
+                              ) : (
+                                <p className="text-[15px] font-semibold text-black">
+                                  {order.productName}
+                                </p>
+                              )}
+                              <p className="text-[14px] leading-6 text-black/68">
+                                {order.selectedSize} /{" "}
+                                {PRODUCT_COLOR_LABELS[order.selectedColor]} /{" "}
+                                {order.quantity}개
+                              </p>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <span
+                                className={[
+                                  "inline-flex rounded border px-2 py-1 text-[13px]",
+                                  getPaymentStatusBadgeClass(order.paymentStatus),
+                                ].join(" ")}
+                              >
+                                {ORDER_PAYMENT_STATUS_LABELS[order.paymentStatus]}
+                              </span>
+                              <span className="inline-flex rounded border border-[#d9dde3] bg-[#f7f8fa] px-2 py-1 text-[13px] text-[#435167]">
+                                {ORDER_STATUS_LABELS[order.orderStatus]}
+                              </span>
+                            </div>
+
+                            <div className="mt-4">
+                              {canShowTransferButton && tossRecipientInfo ? (
+                                <OrderTransferButton
+                                  amount={order.totalAmount}
+                                  bankName={tossRecipientInfo.bankName}
+                                  accountNumber={tossRecipientInfo.accountNumber}
+                                  accountHolder={tossRecipientInfo.accountHolder}
+                                />
+                              ) : (
+                                <span className="text-[13px] text-black/36">
+                                  송금 가능한 주문이 아닙니다.
+                                </span>
+                              )}
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+
+                    <div className="hidden overflow-x-auto md:block">
+                      <table className="min-w-full border-collapse text-[15px]">
                       <thead className="bg-[#f7f8fa] text-[#374151]">
                         <tr>
                           <th className="border-b border-black/8 px-4 py-3 text-left font-medium">
@@ -179,55 +267,84 @@ export default async function MyPage({ searchParams }: MyPageProps) {
                           <th className="border-b border-black/8 px-4 py-3 text-left font-medium">
                             주문 상태
                           </th>
+                          <th className="border-b border-black/8 px-4 py-3 text-left font-medium">
+                            송금
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {orders.map((order) => (
-                          <tr key={order.id}>
-                            <td className="border-b border-black/8 px-4 py-4 text-black/72">
-                              <div className="space-y-1">
-                                <p className="font-medium text-black">
-                                  {formatDateTime(order.createdAt)}
-                                </p>
-                                <p className="text-[13px]">{order.orderCode}</p>
-                              </div>
-                            </td>
-                            <td className="border-b border-black/8 px-4 py-4">
-                              <div className="space-y-1">
-                                {order.productId ? (
-                                  <Link
-                                    href={`/products/${order.productId}`}
-                                    className="font-medium text-black hover:text-[#2f6fed]"
-                                  >
-                                    {order.productName}
-                                  </Link>
+                        {orders.map((order) => {
+                          const canShowTransferButton =
+                            Boolean(tossRecipientInfo) &&
+                            order.paymentStatus === "awaiting_deposit" &&
+                            order.orderStatus === "received";
+
+                          return (
+                            <tr key={order.id}>
+                              <td className="border-b border-black/8 px-4 py-4 text-black/72">
+                                <div className="space-y-1">
+                                  <p className="font-medium text-black">
+                                    {formatDateTime(order.createdAt)}
+                                  </p>
+                                  <p className="text-[13px]">{order.orderCode}</p>
+                                </div>
+                              </td>
+                              <td className="border-b border-black/8 px-4 py-4">
+                                <div className="space-y-1">
+                                  {order.productId ? (
+                                    <Link
+                                      href={`/products/${order.productId}`}
+                                      className="font-medium text-black hover:text-[#2f6fed]"
+                                    >
+                                      {order.productName}
+                                    </Link>
+                                  ) : (
+                                    <p className="font-medium text-black">{order.productName}</p>
+                                  )}
+                                  <p className="text-[13px] text-black/72">
+                                    {order.selectedSize} /{" "}
+                                    {PRODUCT_COLOR_LABELS[order.selectedColor]} /{" "}
+                                    {order.quantity}개
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="border-b border-black/8 px-4 py-4 text-black">
+                                {formatPrice(order.totalAmount)}
+                              </td>
+                              <td className="border-b border-black/8 px-4 py-4">
+                                <span
+                                  className={[
+                                    "inline-flex rounded border px-2 py-1 text-[13px]",
+                                    getPaymentStatusBadgeClass(order.paymentStatus),
+                                  ].join(" ")}
+                                >
+                                  {ORDER_PAYMENT_STATUS_LABELS[order.paymentStatus]}
+                                </span>
+                              </td>
+                              <td className="border-b border-black/8 px-4 py-4">
+                                <span className="inline-flex rounded border border-[#d9dde3] bg-[#f7f8fa] px-2 py-1 text-[13px] text-[#435167]">
+                                  {ORDER_STATUS_LABELS[order.orderStatus]}
+                                </span>
+                              </td>
+                              <td className="border-b border-black/8 px-4 py-4">
+                                {canShowTransferButton && tossRecipientInfo ? (
+                                  <OrderTransferButton
+                                    amount={order.totalAmount}
+                                    bankName={tossRecipientInfo.bankName}
+                                    accountNumber={tossRecipientInfo.accountNumber}
+                                    accountHolder={tossRecipientInfo.accountHolder}
+                                  />
                                 ) : (
-                                  <p className="font-medium text-black">{order.productName}</p>
+                                  <span className="text-[13px] text-black/36">-</span>
                                 )}
-                                <p className="text-[13px] text-black/72">
-                                  {order.selectedSize} / {PRODUCT_COLOR_LABELS[order.selectedColor]} /{" "}
-                                  {order.quantity}개
-                                </p>
-                              </div>
-                            </td>
-                            <td className="border-b border-black/8 px-4 py-4 text-black">
-                              {formatPrice(order.totalAmount)}
-                            </td>
-                            <td className="border-b border-black/8 px-4 py-4">
-                              <span className="inline-flex rounded border border-[#d9dde3] bg-[#f7f8fa] px-2 py-1 text-[13px] text-[#435167]">
-                                {ORDER_PAYMENT_STATUS_LABELS[order.paymentStatus]}
-                              </span>
-                            </td>
-                            <td className="border-b border-black/8 px-4 py-4">
-                              <span className="inline-flex rounded border border-[#d9dde3] bg-[#f7f8fa] px-2 py-1 text-[13px] text-[#435167]">
-                                {ORDER_STATUS_LABELS[order.orderStatus]}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
-                    </table>
-                  </div>
+                      </table>
+                    </div>
+                  </>
                 ) : (
                   <div className="px-5 py-14 text-center text-[15px] text-black/68">
                     로그인 이후 접수된 주문 내역이 없습니다.

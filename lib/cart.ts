@@ -565,3 +565,43 @@ export async function updateGuestCartItemQuantityFromRequest(input: {
   await setGuestCartCookie(result.cartId);
   return result;
 }
+
+export async function clearGuestCartItemsFromRequest() {
+  await ensureCartSchema();
+
+  const currentCartId = await getCurrentGuestCartId();
+
+  if (!currentCartId) {
+    await clearGuestCartCookie();
+    return { status: "empty" as const };
+  }
+
+  const result = await withTransaction(async (client) => {
+    const cart = await getActiveGuestCartForUpdate(client, currentCartId);
+
+    if (!cart) {
+      return { status: "missing" as const };
+    }
+
+    await client.query(
+      `
+        DELETE FROM guest_cart_items
+        WHERE cart_id = $1
+      `,
+      [cart.id],
+    );
+
+    await client.query(
+      `
+        DELETE FROM guest_carts
+        WHERE id = $1
+      `,
+      [cart.id],
+    );
+
+    return { status: "cleared" as const };
+  });
+
+  await clearGuestCartCookie();
+  return result;
+}
