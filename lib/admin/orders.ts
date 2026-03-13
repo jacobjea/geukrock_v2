@@ -1,11 +1,15 @@
 import "server-only";
 
-import { query } from "@/lib/db";
+import type { PoolClient } from "pg";
+
+import { query, withTransaction } from "@/lib/db";
 import { ensureProductSchema } from "@/lib/admin/products";
+import { getProductSaleStatus } from "@/lib/product-sale";
 import {
   normalizeProductColors,
   normalizeProductSizes,
   type ProductColor,
+  type ProductSaleMode,
   type ProductSize,
 } from "@/types/product";
 import type {
@@ -13,6 +17,7 @@ import type {
   CreatedOrderResult,
   OrderBankAccountInfo,
   OrderDatePreset,
+  OrderLineItemInput,
   OrderListFilters,
   OrderListItem,
   OrderPaymentStatus,
@@ -90,7 +95,12 @@ type ProductOrderRow = {
   price: number;
   sizeOptions: string[] | null;
   colorOptions: string[] | null;
+  saleMode: ProductSaleMode;
+  saleStartAt: Date | null;
+  saleEndAt: Date | null;
 };
+
+type OrderQueryClient = Pick<PoolClient, "query">;
 
 type OrderRow = {
   id: string;
@@ -342,24 +352,26 @@ export function buildAdminOrdersPageHref(
   return queryString ? `/admin/orders?${queryString}` : "/admin/orders";
 }
 
-export async function createOrderRecord(
-  input: CreateOrderInput,
-): Promise<CreatedOrderResult> {
-  await ensureOrderSchema();
-
-  const productResult = await query<ProductOrderRow>(
+async function getProductForOrder(
+  client: OrderQueryClient,
+  productId: string,
+): Promise<ProductOrderRow> {
+  const productResult = await client.query<ProductOrderRow>(
     `
       SELECT
         id,
         name,
         price,
         size_options AS "sizeOptions",
-        color_options AS "colorOptions"
+        color_options AS "colorOptions",
+        sale_mode AS "saleMode",
+        sale_start_at AS "saleStartAt",
+        sale_end_at AS "saleEndAt"
       FROM products
       WHERE id = $1
       LIMIT 1
     `,
-    [input.productId],
+    [productId],
   );
   const product = productResult.rows[0];
 
@@ -367,21 +379,44 @@ export async function createOrderRecord(
     throw new Error("주문할 상품을 찾을 수 없습니다.");
   }
 
+  const saleStatus = getProductSaleStatus(product);
+
+  if (!saleStatus.canOrder) {
+    if (saleStatus.state === "upcoming") {
+      throw new Error("아직 주문 접수 기간이 시작되지 않았습니다.");
+    }
+
+    throw new Error("주문 접수 기간이 종료된 상품입니다.");
+  }
+
+  return product;
+}
+
+function validateOrderLineItem(
+  product: ProductOrderRow,
+  lineItem: OrderLineItemInput,
+) {
   const sizeOptions = normalizeProductSizes(product.sizeOptions);
   const colorOptions = normalizeProductColors(product.colorOptions);
 
-  if (!sizeOptions.includes(input.selectedSize)) {
+  if (!sizeOptions.includes(lineItem.selectedSize)) {
     throw new Error("선택한 사이즈를 다시 확인해 주세요.");
   }
 
-  if (!colorOptions.includes(input.selectedColor)) {
+  if (!colorOptions.includes(lineItem.selectedColor)) {
     throw new Error("선택한 색상을 다시 확인해 주세요.");
   }
+}
 
+async function insertOrderRecord(
+  client: OrderQueryClient,
+  product: ProductOrderRow,
+  input: CreateOrderInput,
+  bankInfo: OrderBankAccountInfo,
+): Promise<CreatedOrderResult> {
   const orderCode = generateOrderCode();
   const totalAmount = Number(product.price) * input.quantity;
-  const bankInfo = getOrderBankAccountInfo();
-  const insertResult = await query<{ id: string }>(
+  const insertResult = await client.query<{ id: string }>(
     `
       INSERT INTO orders (
         order_code,
@@ -427,6 +462,71 @@ export async function createOrderRecord(
     totalAmount,
     bankInfo,
   };
+}
+
+export async function createOrderRecords(input: {
+  productId: string;
+  memberUserId?: string | null;
+  customerName: string;
+  customerPhone: string;
+  depositorName: string;
+  note: string | null;
+  lineItems: OrderLineItemInput[];
+}): Promise<CreatedOrderResult[]> {
+  await ensureOrderSchema();
+
+  return withTransaction(async (client) => {
+    const product = await getProductForOrder(client, input.productId);
+    const bankInfo = getOrderBankAccountInfo();
+    const createdOrders: CreatedOrderResult[] = [];
+
+    for (const lineItem of input.lineItems) {
+      validateOrderLineItem(product, lineItem);
+
+      createdOrders.push(
+        await insertOrderRecord(
+          client,
+          product,
+          {
+            productId: input.productId,
+            memberUserId: input.memberUserId ?? null,
+            customerName: input.customerName,
+            customerPhone: input.customerPhone,
+            depositorName: input.depositorName,
+            note: input.note,
+            quantity: lineItem.quantity,
+            selectedSize: lineItem.selectedSize,
+            selectedColor: lineItem.selectedColor,
+          },
+          bankInfo,
+        ),
+      );
+    }
+
+    return createdOrders;
+  });
+}
+
+export async function createOrderRecord(
+  input: CreateOrderInput,
+): Promise<CreatedOrderResult> {
+  const [createdOrder] = await createOrderRecords({
+    productId: input.productId,
+    memberUserId: input.memberUserId ?? null,
+    customerName: input.customerName,
+    customerPhone: input.customerPhone,
+    depositorName: input.depositorName,
+    note: input.note,
+    lineItems: [
+      {
+        quantity: input.quantity,
+        selectedSize: input.selectedSize,
+        selectedColor: input.selectedColor,
+      },
+    ],
+  });
+
+  return createdOrder;
 }
 
 export async function listOrdersByMemberUserId(

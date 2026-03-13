@@ -1,0 +1,172 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { Footer } from "@/components/layout/Footer";
+import { Header } from "@/components/layout/Header";
+import { OrderCheckoutPage } from "@/components/order/OrderCheckoutPage";
+import { getStorefrontProductById } from "@/lib/admin/products";
+import { getCurrentMember } from "@/lib/auth";
+import { parseOrderLineItems } from "@/lib/order-line-items";
+import {
+  formatSalePeriod,
+  getProductSaleStatus,
+} from "@/lib/product-sale";
+
+export const dynamic = "force-dynamic";
+
+interface OrdersPageProps {
+  searchParams: Promise<{
+    productId?: string | string[];
+    lineItems?: string | string[];
+  }>;
+}
+
+function getSearchParam(value?: string | string[]) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value[0] ?? "";
+  }
+
+  return "";
+}
+
+export default async function OrdersPage({ searchParams }: OrdersPageProps) {
+  const params = await searchParams;
+  const productId = getSearchParam(params.productId);
+  const lineItemsValue = getSearchParam(params.lineItems);
+
+  if (!productId) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <main className="pb-24">
+          <div className="mx-auto max-w-[1440px] px-5 pb-16 pt-6 sm:px-8 lg:px-12">
+            <section className="border border-black/10 bg-white px-5 py-12 text-center">
+              <p className="text-[1.1rem] font-semibold text-black">
+                주문할 상품 정보를 확인할 수 없습니다.
+              </p>
+              <p className="mt-3 text-[15px] leading-7 text-black/72">
+                상품 상세 페이지에서 옵션을 다시 선택한 뒤 주문을 진행해 주세요.
+              </p>
+              <Link
+                href="/#new-in"
+                className="mt-6 inline-flex h-12 items-center justify-center border border-black/12 px-6 text-[15px] font-medium text-black hover:bg-black/[0.03]"
+              >
+                상품 보러가기
+              </Link>
+            </section>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const [product, currentMember] = await Promise.all([
+    getStorefrontProductById(productId),
+    getCurrentMember(),
+  ]);
+
+  if (!product) {
+    notFound();
+  }
+
+  const parsedLineItems = parseOrderLineItems(lineItemsValue);
+  const saleStatus = getProductSaleStatus(product);
+  const availableItems = parsedLineItems.ok
+    ? parsedLineItems.items.filter(
+        (item) =>
+          product.sizeOptions.includes(item.selectedSize) &&
+          product.colorOptions.includes(item.selectedColor),
+      )
+    : [];
+  const lineItemsError = !parsedLineItems.ok
+    ? parsedLineItems.message
+    : availableItems.length !== parsedLineItems.items.length
+      ? "현재 판매 중인 옵션 정보와 맞지 않습니다. 상세 페이지에서 다시 선택해 주세요."
+      : !saleStatus.canOrder
+        ? saleStatus.state === "upcoming"
+          ? "아직 주문 접수 기간이 시작되지 않았습니다."
+          : "주문 접수 기간이 종료된 상품입니다."
+      : null;
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
+      <main className="pb-24">
+        <div className="mx-auto max-w-[1440px] px-5 pb-16 pt-6 sm:px-8 lg:px-12">
+          <nav className="flex flex-wrap items-center gap-2 text-[13px] text-black/62">
+            <Link href="/" className="hover:text-black">
+              홈
+            </Link>
+            <span>/</span>
+            <Link href="/#new-in" className="hover:text-black">
+              상품
+            </Link>
+            <span>/</span>
+            <Link href={`/products/${product.id}`} className="hover:text-black">
+              {product.name}
+            </Link>
+            <span>/</span>
+            <span className="text-black/84">주문서</span>
+          </nav>
+
+          <section className="mt-6 border border-black/10 bg-white px-5 py-6 sm:px-7">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-black/62">
+              Order Checkout
+            </p>
+            <h1 className="mt-3 text-[2rem] font-semibold tracking-[-0.05em] text-black">
+              주문하기
+            </h1>
+            <p className="mt-3 max-w-2xl text-[15px] leading-7 text-black/72">
+              선택한 옵션을 확인하고 주문자 정보를 입력해 주문을 접수할 수 있습니다.
+            </p>
+          </section>
+
+          {lineItemsError ? (
+            <section className="mt-8 border border-black/10 bg-white px-5 py-12 text-center">
+              <p className="text-[1.05rem] font-semibold text-black">
+                {!saleStatus.canOrder
+                  ? "현재는 주문을 접수할 수 없습니다."
+                  : "선택한 주문 옵션을 확인할 수 없습니다."}
+              </p>
+              <p className="mt-3 text-[15px] leading-7 text-black/72">
+                {lineItemsError}
+              </p>
+              {product.saleMode === "period" ? (
+                <p className="mt-2 text-[14px] leading-6 text-black/60">
+                  설정된 판매 기간:{" "}
+                  {formatSalePeriod(product.saleStartAt, product.saleEndAt)}
+                </p>
+              ) : null}
+              <Link
+                href={`/products/${product.id}`}
+                className="mt-6 inline-flex h-12 items-center justify-center border border-black/12 px-6 text-[15px] font-medium text-black hover:bg-black/[0.03]"
+              >
+                상품 페이지로 돌아가기
+              </Link>
+            </section>
+          ) : (
+            <div className="mt-8">
+              <OrderCheckoutPage
+                productId={product.id}
+                productName={product.name}
+                productDescription={product.description}
+                productThumbnailUrl={product.thumbnailUrl}
+                productPrice={product.price}
+                selectedItems={availableItems}
+                currentMemberName={currentMember?.nickname ?? null}
+                isSignedIn={Boolean(currentMember)}
+                productHref={`/products/${product.id}`}
+              />
+            </div>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}

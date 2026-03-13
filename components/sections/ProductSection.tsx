@@ -25,21 +25,21 @@ function ProductCard({ product }: { product: StorefrontProduct }) {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-black/40">
+            <div className="flex h-full items-center justify-center text-sm text-black/64">
               No Image
             </div>
           )}
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-black/46">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-black/62">
             GEUKROCK SELECT
           </p>
-          <h3 className="text-[15px] leading-6 text-black/88">{product.name}</h3>
-          <p className="line-clamp-2 min-h-10 text-[13px] leading-5 text-black/58">
+          <h3 className="text-[17px] leading-7 text-black">{product.name}</h3>
+          <p className="line-clamp-2 min-h-12 text-[14px] leading-6 text-black/72">
             {product.description || "등록된 상품 설명이 없습니다."}
           </p>
-          <div className="flex items-center gap-2 text-[15px]">
+          <div className="flex items-center gap-2 text-[17px]">
             <span className="font-semibold text-black">
               {priceFormatter.format(product.price)}원
             </span>
@@ -56,14 +56,14 @@ export function ProductSection({ products }: ProductSectionProps) {
       <div className="mx-auto max-w-[1440px]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-black/46">
+            <p className="text-[12px] font-medium uppercase tracking-[0.24em] text-black/62">
               New In
             </p>
-            <h2 className="text-[2rem] font-semibold leading-[1.02] tracking-[-0.07em] text-black sm:text-[2.7rem]">
+            <h2 className="text-[2.15rem] font-semibold leading-[1.02] tracking-[-0.07em] text-black sm:text-[2.9rem]">
               최근 등록된 상품
             </h2>
           </div>
-          <p className="max-w-lg text-[14px] leading-6 text-black/58">
+          <p className="max-w-lg text-[15px] leading-7 text-black/72">
             관리자 화면에서 등록한 상품이 이 영역과 상세 페이지에 바로
             반영됩니다.
           </p>
@@ -76,7 +76,7 @@ export function ProductSection({ products }: ProductSectionProps) {
             ))}
           </div>
         ) : (
-          <div className="mt-9 rounded-[18px] border border-dashed border-black/14 bg-white/55 px-6 py-14 text-center text-[14px] text-black/58">
+          <div className="mt-9 rounded-[18px] border border-dashed border-black/14 bg-white/55 px-6 py-14 text-center text-[15px] text-black/72">
             아직 등록된 상품이 없습니다.
           </div>
         )}

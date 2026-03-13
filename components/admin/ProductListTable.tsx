@@ -11,6 +11,10 @@ import {
   reorderProductsAction,
 } from "@/app/admin/products/actions";
 import { formatDate, formatPrice } from "@/lib/admin/format";
+import {
+  formatSalePeriod,
+  getProductSaleStatus,
+} from "@/lib/product-sale";
 import type { ProductListItem } from "@/types/admin-product";
 
 import { ProductDeleteButton } from "./ProductDeleteButton";
@@ -181,6 +185,9 @@ export function ProductListTable({
                 판매가
               </th>
               <th className="border-b border-[#e5e7eb] px-4 py-3 font-medium">
+                판매 상태
+              </th>
+              <th className="border-b border-[#e5e7eb] px-4 py-3 font-medium">
                 상세 이미지
               </th>
               <th className="border-b border-[#e5e7eb] px-4 py-3 font-medium">
@@ -193,6 +200,7 @@ export function ProductListTable({
           </thead>
           <tbody>
             {orderedItems.map((item, index) => {
+              const saleStatus = getProductSaleStatus(item);
               const isDragging = draggingId === item.id;
               const isDropTarget = dropTargetId === item.id && !isDragging;
               const isHighlighted = isDragging || isDropTarget;
@@ -281,6 +289,34 @@ export function ProductListTable({
                     className={`${rowCellClass} ${middleCellHighlightClass} px-4 py-4 font-medium`}
                   >
                     {formatPrice(item.price)}
+                  </td>
+                  <td
+                    className={`${rowCellClass} ${middleCellHighlightClass} px-4 py-4 text-[#4b5563]`}
+                  >
+                    <div className="space-y-1">
+                      <span
+                        className={`inline-flex rounded border px-2 py-1 text-xs font-medium ${
+                          saleStatus.state === "active" || saleStatus.state === "always"
+                            ? "border-[#cfe2c1] bg-[#f2f8ed] text-[#315c23]"
+                            : saleStatus.state === "upcoming"
+                              ? "border-[#cddcf7] bg-[#eef5ff] text-[#2f5b9b]"
+                              : "border-[#e3d2d2] bg-[#fbf1f1] text-[#975454]"
+                        }`}
+                      >
+                        {saleStatus.state === "always"
+                          ? "상시 판매"
+                          : saleStatus.state === "active"
+                            ? "판매 중"
+                            : saleStatus.state === "upcoming"
+                              ? "판매 예정"
+                              : "판매 종료"}
+                      </span>
+                      <p className="text-xs text-[#6b7280]">
+                        {item.saleMode === "always"
+                          ? "기간 제한 없음"
+                          : formatSalePeriod(item.saleStartAt, item.saleEndAt)}
+                      </p>
+                    </div>
                   </td>
                   <td
                     className={`${rowCellClass} ${middleCellHighlightClass} px-4 py-4 text-[#4b5563]`}

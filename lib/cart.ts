@@ -9,7 +9,11 @@ import {
   isProductColor,
   isProductSize,
 } from "@/types/product";
-import type { GuestCartItem, GuestCartSnapshot } from "@/types/cart";
+import type {
+  GuestCartItem,
+  GuestCartSelectionInput,
+  GuestCartSnapshot,
+} from "@/types/cart";
 
 export const GUEST_CART_COOKIE_NAME = "guestCartId";
 export const GUEST_CART_TTL_DAYS = 30;
@@ -359,17 +363,21 @@ export async function getGuestCartSnapshotFromRequest() {
   return getGuestCartSnapshot(cartId);
 }
 
-export async function addItemToGuestCartFromRequest(input: {
+export async function addItemsToGuestCartFromRequest(input: {
   productId: string;
-  selectedSize: string;
-  selectedColor: string;
-  quantity: number;
+  items: GuestCartSelectionInput[];
 }) {
   await ensureCartSchema();
 
-  const quantity = clampCartQuantity(input.quantity);
-  const selectedSize = getValidProductSize(input.selectedSize);
-  const selectedColor = getValidProductColor(input.selectedColor);
+  if (!input.items.length) {
+    throw new Error("장바구니에 담을 옵션을 선택해 주세요.");
+  }
+
+  const normalizedItems = input.items.map((item) => ({
+    quantity: clampCartQuantity(item.quantity),
+    selectedSize: getValidProductSize(item.selectedSize),
+    selectedColor: getValidProductColor(item.selectedColor),
+  }));
   const currentCartId = await getCurrentGuestCartId();
 
   const cartId = await withTransaction(async (client) => {
@@ -397,38 +405,45 @@ export async function addItemToGuestCartFromRequest(input: {
 
     const sizeOptions = product.sizeOptions?.filter(isProductSize) ?? [];
     const colorOptions = product.colorOptions?.filter(isProductColor) ?? [];
-
-    if (!sizeOptions.includes(selectedSize)) {
-      throw new Error("선택한 사이즈는 현재 판매 중이 아닙니다.");
-    }
-
-    if (!colorOptions.includes(selectedColor)) {
-      throw new Error("선택한 색상은 현재 판매 중이 아닙니다.");
-    }
-
     const cart =
       (currentCartId
         ? await getActiveGuestCartForUpdate(client, currentCartId)
         : null) ?? (await createGuestCart(client));
 
-    await client.query(
-      `
-        INSERT INTO guest_cart_items (
-          cart_id,
-          product_id,
-          selected_size,
-          selected_color,
-          quantity
-        )
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (cart_id, product_id, selected_size, selected_color)
-        DO UPDATE
-        SET
-          quantity = LEAST(99, guest_cart_items.quantity + EXCLUDED.quantity),
-          updated_at = NOW()
-      `,
-      [cart.id, input.productId, selectedSize, selectedColor, quantity],
-    );
+    for (const item of normalizedItems) {
+      if (!sizeOptions.includes(item.selectedSize)) {
+        throw new Error("선택한 사이즈는 현재 판매 중이 아닙니다.");
+      }
+
+      if (!colorOptions.includes(item.selectedColor)) {
+        throw new Error("선택한 색상은 현재 판매 중이 아닙니다.");
+      }
+
+      await client.query(
+        `
+          INSERT INTO guest_cart_items (
+            cart_id,
+            product_id,
+            selected_size,
+            selected_color,
+            quantity
+          )
+          VALUES ($1, $2, $3, $4, $5)
+          ON CONFLICT (cart_id, product_id, selected_size, selected_color)
+          DO UPDATE
+          SET
+            quantity = LEAST(99, guest_cart_items.quantity + EXCLUDED.quantity),
+            updated_at = NOW()
+        `,
+        [
+          cart.id,
+          input.productId,
+          item.selectedSize,
+          item.selectedColor,
+          item.quantity,
+        ],
+      );
+    }
 
     return cart.id;
   });
@@ -438,6 +453,24 @@ export async function addItemToGuestCartFromRequest(input: {
   return {
     cartId,
   };
+}
+
+export async function addItemToGuestCartFromRequest(input: {
+  productId: string;
+  selectedSize: string;
+  selectedColor: string;
+  quantity: number;
+}) {
+  return addItemsToGuestCartFromRequest({
+    productId: input.productId,
+    items: [
+      {
+        quantity: input.quantity,
+        selectedSize: getValidProductSize(input.selectedSize),
+        selectedColor: getValidProductColor(input.selectedColor),
+      },
+    ],
+  });
 }
 
 export async function updateGuestCartItemQuantityFromRequest(input: {

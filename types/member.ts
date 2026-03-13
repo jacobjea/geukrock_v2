@@ -11,7 +11,9 @@ export interface MemberUser {
 
 export interface CurrentMember {
   id: string;
+  kakaoUserId: string | null;
   nickname: string;
   email: string | null;
   profileImageUrl: string | null;
+  isAdmin: boolean;
 }

@@ -1,10 +1,14 @@
 import Link from "next/link";
 
-export default function AdminLayout({
+import { requireCurrentAdmin } from "@/lib/auth";
+
+export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await requireCurrentAdmin();
+
   return (
     <div className="min-h-screen bg-[#f3f4f7] text-[#222222]">
       <header className="border-b border-[#d9dde3] bg-white">

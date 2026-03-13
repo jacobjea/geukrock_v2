@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 import { deleteProductImages, uploadProductImage } from "@/lib/admin/blob";
+import { requireCurrentAdmin } from "@/lib/auth";
+import { parseKstDateTimeInput } from "@/lib/product-sale";
 import {
   createProductRecord,
   deleteProductRecord,
@@ -18,8 +20,10 @@ import {
 } from "@/types/admin-product";
 import {
   isProductColor,
+  isProductSaleMode,
   isProductSize,
   type ProductColor,
+  type ProductSaleMode,
   type ProductSize,
 } from "@/types/product";
 
@@ -91,6 +95,9 @@ function validateProductForm(formData: FormData) {
   const name = getStringValue(formData.get("name"));
   const description = getOptionalStringValue(formData.get("description"));
   const priceValue = getStringValue(formData.get("price"));
+  const saleModeValue = getStringValue(formData.get("saleMode"));
+  const saleStartAtValue = getStringValue(formData.get("saleStartAt"));
+  const saleEndAtValue = getStringValue(formData.get("saleEndAt"));
   const thumbnailFile = getSingleFile(formData.get("thumbnail"));
   const detailFiles = getFiles(formData.getAll("detailImages"));
   const selectedSizes = getSelectedSizes(formData.getAll("sizes"));
@@ -104,6 +111,13 @@ function validateProductForm(formData: FormData) {
   const removeThumbnail = formData.get("removeThumbnail") === "on";
   const fieldErrors: ProductFormState["fieldErrors"] = {};
   const price = Number(priceValue);
+  const saleMode: ProductSaleMode = isProductSaleMode(saleModeValue)
+    ? saleModeValue
+    : "always";
+  const saleStartAt =
+    saleMode === "period" ? parseKstDateTimeInput(saleStartAtValue) : null;
+  const saleEndAt =
+    saleMode === "period" ? parseKstDateTimeInput(saleEndAtValue) : null;
 
   if (!name) {
     fieldErrors.name = "상품명을 입력해 주세요.";
@@ -115,6 +129,28 @@ function validateProductForm(formData: FormData) {
     fieldErrors.price = "판매가를 입력해 주세요.";
   } else if (!Number.isInteger(price) || price < 0) {
     fieldErrors.price = "판매가는 0 이상의 정수만 입력할 수 있습니다.";
+  }
+
+  if (!isProductSaleMode(saleModeValue)) {
+    fieldErrors.saleMode = "판매 방식을 다시 선택해 주세요.";
+  }
+
+  if (saleMode === "period") {
+    if (!saleStartAtValue) {
+      fieldErrors.saleStartAt = "판매 시작 일시를 입력해 주세요.";
+    } else if (!saleStartAt) {
+      fieldErrors.saleStartAt = "판매 시작 일시 형식을 확인해 주세요.";
+    }
+
+    if (!saleEndAtValue) {
+      fieldErrors.saleEndAt = "판매 종료 일시를 입력해 주세요.";
+    } else if (!saleEndAt) {
+      fieldErrors.saleEndAt = "판매 종료 일시 형식을 확인해 주세요.";
+    }
+
+    if (saleStartAt && saleEndAt && new Date(saleStartAt) >= new Date(saleEndAt)) {
+      fieldErrors.saleEndAt = "판매 종료 일시는 시작 일시보다 늦어야 합니다.";
+    }
   }
 
   if (!selectedSizes.values.length) {
@@ -154,6 +190,9 @@ function validateProductForm(formData: FormData) {
         name,
         description,
         price,
+        saleMode,
+        saleStartAt,
+        saleEndAt,
         sizeOptions: selectedSizes.values,
         colorOptions: selectedColors.values,
         thumbnailFile,
@@ -171,6 +210,9 @@ function validateProductForm(formData: FormData) {
       name,
       description,
       price,
+      saleMode,
+      saleStartAt,
+      saleEndAt,
       sizeOptions: selectedSizes.values,
       colorOptions: selectedColors.values,
       thumbnailFile,
@@ -195,6 +237,7 @@ export async function createProductAction(
   formData: FormData,
 ): Promise<ProductFormState> {
   void _previousState;
+  await requireCurrentAdmin();
 
   const validation = validateProductForm(formData);
 
@@ -206,6 +249,9 @@ export async function createProductAction(
     name,
     description,
     price,
+    saleMode,
+    saleStartAt,
+    saleEndAt,
     sizeOptions,
     colorOptions,
     thumbnailFile,
@@ -235,6 +281,9 @@ export async function createProductAction(
       name,
       description,
       price,
+      saleMode,
+      saleStartAt,
+      saleEndAt,
       sizeOptions,
       colorOptions,
       thumbnail,
@@ -264,6 +313,7 @@ export async function updateProductAction(
   formData: FormData,
 ): Promise<ProductFormState> {
   void _previousState;
+  await requireCurrentAdmin();
 
   const validation = validateProductForm(formData);
 
@@ -271,15 +321,18 @@ export async function updateProductAction(
     return validation.state;
   }
 
-    const {
-      name,
-      description,
-      price,
-      sizeOptions,
-      colorOptions,
-      thumbnailFile,
-      detailFiles,
-      detailImageOrder,
+  const {
+    name,
+    description,
+    price,
+    saleMode,
+    saleStartAt,
+    saleEndAt,
+    sizeOptions,
+    colorOptions,
+    thumbnailFile,
+    detailFiles,
+    detailImageOrder,
     deletedImageIds,
     removeThumbnail,
   } = validation.parsed;
@@ -308,6 +361,9 @@ export async function updateProductAction(
       name,
       description,
       price,
+      saleMode,
+      saleStartAt,
+      saleEndAt,
       sizeOptions,
       colorOptions,
       thumbnail,
@@ -343,6 +399,7 @@ export async function updateProductAction(
 }
 
 export async function deleteProductAction(productId: string) {
+  await requireCurrentAdmin();
   const result = await deleteProductRecord(productId);
 
   if (result?.removedAssets.length) {
@@ -358,6 +415,8 @@ export async function reorderProductsAction(
   page: number,
   orderedProductIds: string[],
 ): Promise<ProductSortActionResult> {
+  await requireCurrentAdmin();
+
   try {
     const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 

@@ -46,16 +46,19 @@ export interface OrderBankAccountInfo {
   accountHolder: string;
 }
 
-export interface CreateOrderInput {
+export interface OrderLineItemInput {
+  quantity: number;
+  selectedSize: ProductSize;
+  selectedColor: ProductColor;
+}
+
+export interface CreateOrderInput extends OrderLineItemInput {
   productId: string;
   memberUserId?: string | null;
   customerName: string;
   customerPhone: string;
   depositorName: string;
   note: string | null;
-  quantity: number;
-  selectedSize: ProductSize;
-  selectedColor: ProductColor;
 }
 
 export interface CreatedOrderResult {
@@ -109,6 +112,7 @@ export type OrderFormField =
   | "customerName"
   | "customerPhone"
   | "depositorName"
+  | "lineItems"
   | "quantity"
   | "size"
   | "color";
@@ -118,6 +122,7 @@ export interface OrderFormState {
   message?: string;
   fieldErrors: Partial<Record<OrderFormField, string>>;
   orderCode?: string;
+  orderCodes?: string[];
   totalAmount?: number;
   bankInfo?: OrderBankAccountInfo;
 }

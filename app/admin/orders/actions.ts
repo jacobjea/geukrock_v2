@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { requireCurrentAdmin } from "@/lib/auth";
 import {
   buildAdminOrdersPageHref,
   cancelOrderRecord,
@@ -21,6 +22,7 @@ export async function updateOrderPaymentStatusAction(
   nextStatus: OrderPaymentStatus,
   returnTo?: string,
 ) {
+  await requireCurrentAdmin();
   const redirectTo = returnTo || buildAdminOrdersPageHref();
 
   try {
@@ -41,6 +43,7 @@ export async function updateOrderPaymentStatusAction(
 }
 
 export async function cancelOrderAction(orderId: string, returnTo?: string) {
+  await requireCurrentAdmin();
   const redirectTo = returnTo || buildAdminOrdersPageHref();
 
   try {

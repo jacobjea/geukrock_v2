@@ -212,16 +212,16 @@ export function CartPageContent({
         ) : null}
 
         <section className="mt-8 border border-dashed border-black/12 bg-white/70 px-6 py-16 text-center">
-          <p className="text-[1.05rem] font-semibold text-black">
+          <p className="text-[1.1rem] font-semibold text-black">
             장바구니가 비어 있습니다.
           </p>
-          <p className="mt-3 text-sm leading-6 text-black/56">
+          <p className="mt-3 text-[15px] leading-7 text-black/72">
             상세 페이지에서 상품을 담으면 이곳에서 수량을 조절하고 금액을 확인할
             수 있습니다.
           </p>
           <Link
             href="/#new-in"
-            className="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-black/12 bg-white px-6 text-sm font-medium text-black/72 hover:bg-black/[0.03]"
+            className="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-black/12 bg-white px-6 text-[15px] font-medium text-black/84 hover:bg-black/[0.03]"
           >
             상품 보러가기
           </Link>
@@ -273,25 +273,25 @@ export function CartPageContent({
                   <div className="flex min-w-0 flex-col gap-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-black/42">
+                        <p className="text-[12px] font-semibold uppercase tracking-[0.2em] text-black/62">
                           GEUKROCK SELECT
                         </p>
                         <Link
                           href={`/products/${item.productId}`}
-                          className="mt-2 block text-[1.05rem] font-semibold leading-6 text-black hover:opacity-70"
+                          className="mt-2 block text-[1.12rem] font-semibold leading-7 text-black hover:opacity-70"
                         >
                           {item.productName}
                         </Link>
-                        <p className="mt-2 text-[12px] font-medium uppercase tracking-[0.16em] text-black/42">
+                        <p className="mt-2 text-[13px] font-medium uppercase tracking-[0.12em] text-black/62">
                           {item.selectedSize} / {PRODUCT_COLOR_LABELS[item.selectedColor]}
                         </p>
-                        <p className="mt-2 line-clamp-2 text-[14px] leading-6 text-black/56">
+                        <p className="mt-2 line-clamp-2 text-[15px] leading-7 text-black/72">
                           {item.productDescription ||
                             "등록된 상품 설명이 없습니다."}
                         </p>
                       </div>
 
-                      <div className="shrink-0 text-sm text-black/46">
+                      <div className="shrink-0 text-[15px] text-black/62">
                         개당 {formatPrice(item.price)}
                       </div>
                     </div>
@@ -326,7 +326,7 @@ export function CartPageContent({
                         <button
                           type="button"
                           onClick={() => removeItem(item.itemId)}
-                          className="inline-flex h-10 items-center justify-center rounded-full border border-black/12 px-4 text-sm font-medium text-black/62 hover:bg-black/[0.03]"
+                          className="inline-flex h-10 items-center justify-center rounded-full border border-black/12 px-4 text-[15px] font-medium text-black/72 hover:bg-black/[0.03]"
                         >
                           삭제
                         </button>
@@ -341,8 +341,8 @@ export function CartPageContent({
 
         <aside className="space-y-4 xl:sticky xl:top-28">
           <div className="border border-black/10 bg-white px-5 py-6">
-            <p className="text-sm font-semibold text-black">주문 예상 금액</p>
-            <div className="mt-5 space-y-3 text-sm text-black/62">
+            <p className="text-[15px] font-semibold text-black">주문 예상 금액</p>
+            <div className="mt-5 space-y-3 text-[15px] text-black/72">
               <div className="flex items-center justify-between gap-4">
                 <span>상품 수</span>
                 <span>{cart.totalItems}개</span>
@@ -359,7 +359,7 @@ export function CartPageContent({
 
             <div className="mt-5 border-t border-dashed border-black/10 pt-4">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-black/48">총 예상 금액</span>
+                <span className="text-[15px] text-black/62">총 예상 금액</span>
                 <strong className="text-[1.2rem] font-semibold text-black">
                   {formatPrice(cart.subtotal)}
                 </strong>
@@ -369,24 +369,24 @@ export function CartPageContent({
             <button
               type="button"
               disabled
-              className="mt-5 inline-flex h-12 w-full items-center justify-center bg-black text-sm font-medium text-white/78"
+              className="mt-5 inline-flex h-12 w-full items-center justify-center bg-black text-[15px] font-medium text-white"
             >
               주문하기 준비 중
             </button>
 
             <Link
               href="/#new-in"
-              className="mt-3 inline-flex h-12 w-full items-center justify-center border border-black/12 bg-[#f6f4ef] text-sm font-medium text-black/70"
+              className="mt-3 inline-flex h-12 w-full items-center justify-center border border-black/12 bg-[#f6f4ef] text-[15px] font-medium text-black/84"
             >
               쇼핑 계속하기
             </Link>
           </div>
 
           <div className="border border-black/10 bg-[#f7f4ee] px-5 py-5">
-            <p className="text-sm font-semibold text-black">보관 정책</p>
-            <p className="mt-3 text-sm leading-6 text-black/58">
-              비회원 장바구니는 마지막 조회 또는 수정 시점부터 30일 동안
-              유지되고, 만료된 장바구니는 정리 작업에서 자동 삭제됩니다.
+            <p className="text-[15px] font-semibold text-black">보관 정책</p>
+            <p className="mt-3 text-[15px] leading-7 text-black/72">
+              장바구니 상품은 마지막 조회 또는 수정 시점부터 30일 동안 유지되고,
+              만료된 정보는 정리 작업에서 자동 삭제됩니다.
             </p>
           </div>
         </aside>

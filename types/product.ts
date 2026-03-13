@@ -16,6 +16,9 @@ export type ProductSize = (typeof PRODUCT_SIZES)[number];
 export const PRODUCT_COLORS = ["BLACK", "WHITE"] as const;
 export type ProductColor = (typeof PRODUCT_COLORS)[number];
 
+export const PRODUCT_SALE_MODES = ["always", "period"] as const;
+export type ProductSaleMode = (typeof PRODUCT_SALE_MODES)[number];
+
 export const PRODUCT_COLOR_LABELS: Record<ProductColor, string> = {
   BLACK: "블랙",
   WHITE: "화이트",
@@ -32,6 +35,10 @@ export function isProductSize(value: string): value is ProductSize {
 
 export function isProductColor(value: string): value is ProductColor {
   return PRODUCT_COLORS.includes(value as ProductColor);
+}
+
+export function isProductSaleMode(value: string): value is ProductSaleMode {
+  return PRODUCT_SALE_MODES.includes(value as ProductSaleMode);
 }
 
 export function normalizeProductSizes(
@@ -88,6 +95,9 @@ export interface StorefrontProduct {
   description: string | null;
   price: number;
   thumbnailUrl: string | null;
+  saleMode: ProductSaleMode;
+  saleStartAt: string | null;
+  saleEndAt: string | null;
 }
 
 export interface StorefrontProductImage {

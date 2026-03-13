@@ -3,7 +3,11 @@ import "server-only";
 import type { PoolClient } from "pg";
 
 import { query, withTransaction } from "@/lib/db";
-import { normalizeProductColors, normalizeProductSizes } from "@/types/product";
+import {
+  isProductSaleMode,
+  normalizeProductColors,
+  normalizeProductSizes,
+} from "@/types/product";
 import type {
   PaginatedProducts,
   ProductDetail,
@@ -12,6 +16,7 @@ import type {
 } from "@/types/admin-product";
 import type {
   ProductColor,
+  ProductSaleMode,
   ProductSize,
   StorefrontProduct,
   StorefrontProductDetail,
@@ -30,6 +35,9 @@ CREATE TABLE IF NOT EXISTS products (
   price INTEGER NOT NULL CHECK (price >= 0),
   size_options TEXT[] NOT NULL DEFAULT ARRAY['XS', 'S', 'M', 'L', 'XL', '2XL']::text[],
   color_options TEXT[] NOT NULL DEFAULT ARRAY['BLACK']::text[],
+  sale_mode TEXT NOT NULL DEFAULT 'always',
+  sale_start_at TIMESTAMPTZ,
+  sale_end_at TIMESTAMPTZ,
   thumbnail_url TEXT,
   thumbnail_pathname TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
@@ -46,6 +54,15 @@ ALTER TABLE products
 ALTER TABLE products
   ADD COLUMN IF NOT EXISTS color_options TEXT[] DEFAULT ARRAY['BLACK']::text[];
 
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS sale_mode TEXT DEFAULT 'always';
+
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS sale_start_at TIMESTAMPTZ;
+
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS sale_end_at TIMESTAMPTZ;
+
 UPDATE products
 SET size_options = ARRAY['XS', 'S', 'M', 'L', 'XL', '2XL']::text[]
 WHERE size_options IS NULL
@@ -56,6 +73,23 @@ SET color_options = ARRAY['BLACK']::text[]
 WHERE color_options IS NULL
    OR COALESCE(array_length(color_options, 1), 0) = 0;
 
+UPDATE products
+SET sale_mode = 'always'
+WHERE sale_mode IS NULL
+   OR sale_mode NOT IN ('always', 'period');
+
+UPDATE products
+SET
+  sale_mode = 'always',
+  sale_start_at = NULL,
+  sale_end_at = NULL
+WHERE sale_mode = 'period'
+  AND (
+    sale_start_at IS NULL
+    OR sale_end_at IS NULL
+    OR sale_end_at <= sale_start_at
+  );
+
 ALTER TABLE products
   ALTER COLUMN size_options SET NOT NULL;
 
@@ -63,10 +97,16 @@ ALTER TABLE products
   ALTER COLUMN color_options SET NOT NULL;
 
 ALTER TABLE products
+  ALTER COLUMN sale_mode SET NOT NULL;
+
+ALTER TABLE products
   ALTER COLUMN size_options SET DEFAULT ARRAY['XS', 'S', 'M', 'L', 'XL', '2XL']::text[];
 
 ALTER TABLE products
   ALTER COLUMN color_options SET DEFAULT ARRAY['BLACK']::text[];
+
+ALTER TABLE products
+  ALTER COLUMN sale_mode SET DEFAULT 'always';
 
 CREATE TABLE IF NOT EXISTS product_images (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -94,6 +134,9 @@ type ProductRow = {
   price: number;
   sizeOptions: string[] | null;
   colorOptions: string[] | null;
+  saleMode: string;
+  saleStartAt: Date | null;
+  saleEndAt: Date | null;
   sortOrder: number;
   thumbnailUrl: string | null;
   thumbnailPathname: string | null;
@@ -124,6 +167,9 @@ export interface CreateProductInput {
   price: number;
   sizeOptions: ProductSize[];
   colorOptions: ProductColor[];
+  saleMode: ProductSaleMode;
+  saleStartAt: string | null;
+  saleEndAt: string | null;
   thumbnail: ProductAssetInput | null;
   detailImages: ProductAssetInput[];
 }
@@ -187,6 +233,9 @@ function toProductListItem(row: ProductListRow): ProductListItem {
     name: row.name,
     description: row.description,
     price: Number(row.price),
+    saleMode: isProductSaleMode(row.saleMode) ? row.saleMode : "always",
+    saleStartAt: row.saleStartAt ? row.saleStartAt.toISOString() : null,
+    saleEndAt: row.saleEndAt ? row.saleEndAt.toISOString() : null,
     sortOrder: Number(row.sortOrder),
     thumbnailUrl: getAdminBlobUrl(row.thumbnailPathname) ?? row.thumbnailUrl,
     detailImageCount: Number(row.detailImageCount),
@@ -232,6 +281,11 @@ function toProductDetail(
     price: Number(productRow.price),
     sizeOptions: normalizeProductSizes(productRow.sizeOptions),
     colorOptions: normalizeProductColors(productRow.colorOptions),
+    saleMode: isProductSaleMode(productRow.saleMode)
+      ? productRow.saleMode
+      : "always",
+    saleStartAt: productRow.saleStartAt ? productRow.saleStartAt.toISOString() : null,
+    saleEndAt: productRow.saleEndAt ? productRow.saleEndAt.toISOString() : null,
     sortOrder: Number(productRow.sortOrder),
     thumbnailUrl:
       getAdminBlobUrl(productRow.thumbnailPathname) ?? productRow.thumbnailUrl,
@@ -249,6 +303,9 @@ function toStorefrontProduct(row: ProductRow): StorefrontProduct {
     description: row.description,
     price: Number(row.price),
     thumbnailUrl: getAdminBlobUrl(row.thumbnailPathname) ?? row.thumbnailUrl,
+    saleMode: isProductSaleMode(row.saleMode) ? row.saleMode : "always",
+    saleStartAt: row.saleStartAt ? row.saleStartAt.toISOString() : null,
+    saleEndAt: row.saleEndAt ? row.saleEndAt.toISOString() : null,
   };
 }
 
@@ -280,6 +337,11 @@ function toStorefrontProductDetail(
     price: Number(productRow.price),
     sizeOptions: normalizeProductSizes(productRow.sizeOptions),
     colorOptions: normalizeProductColors(productRow.colorOptions),
+    saleMode: isProductSaleMode(productRow.saleMode)
+      ? productRow.saleMode
+      : "always",
+    saleStartAt: productRow.saleStartAt ? productRow.saleStartAt.toISOString() : null,
+    saleEndAt: productRow.saleEndAt ? productRow.saleEndAt.toISOString() : null,
     thumbnailUrl,
     images,
   };
@@ -302,6 +364,9 @@ async function getProductForUpdate(
         price,
         size_options AS "sizeOptions",
         color_options AS "colorOptions",
+        sale_mode AS "saleMode",
+        sale_start_at AS "saleStartAt",
+        sale_end_at AS "saleEndAt",
         sort_order AS "sortOrder",
         thumbnail_url AS "thumbnailUrl",
         thumbnail_pathname AS "thumbnailPathname",
@@ -355,6 +420,9 @@ export async function listProducts(page: number): Promise<PaginatedProducts> {
           p.price,
           p.size_options AS "sizeOptions",
           p.color_options AS "colorOptions",
+          p.sale_mode AS "saleMode",
+          p.sale_start_at AS "saleStartAt",
+          p.sale_end_at AS "saleEndAt",
           p.sort_order AS "sortOrder",
           p.thumbnail_url AS "thumbnailUrl",
           p.thumbnail_pathname AS "thumbnailPathname",
@@ -396,6 +464,9 @@ export async function getProductById(productId: string) {
         price,
         size_options AS "sizeOptions",
         color_options AS "colorOptions",
+        sale_mode AS "saleMode",
+        sale_start_at AS "saleStartAt",
+        sale_end_at AS "saleEndAt",
         sort_order AS "sortOrder",
         thumbnail_url AS "thumbnailUrl",
         thumbnail_pathname AS "thumbnailPathname",
@@ -443,6 +514,9 @@ export async function listStorefrontProducts(): Promise<StorefrontProduct[]> {
         price,
         size_options AS "sizeOptions",
         color_options AS "colorOptions",
+        sale_mode AS "saleMode",
+        sale_start_at AS "saleStartAt",
+        sale_end_at AS "saleEndAt",
         sort_order AS "sortOrder",
         thumbnail_url AS "thumbnailUrl",
         thumbnail_pathname AS "thumbnailPathname",
@@ -470,6 +544,9 @@ export async function getStorefrontProductById(
         price,
         size_options AS "sizeOptions",
         color_options AS "colorOptions",
+        sale_mode AS "saleMode",
+        sale_start_at AS "saleStartAt",
+        sale_end_at AS "saleEndAt",
         sort_order AS "sortOrder",
         thumbnail_url AS "thumbnailUrl",
         thumbnail_pathname AS "thumbnailPathname",
@@ -527,11 +604,14 @@ export async function createProductRecord(
           price,
           size_options,
           color_options,
+          sale_mode,
+          sale_start_at,
+          sale_end_at,
           thumbnail_url,
           thumbnail_pathname,
           sort_order
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING id
       `,
       [
@@ -540,6 +620,9 @@ export async function createProductRecord(
         input.price,
         input.sizeOptions,
         input.colorOptions,
+        input.saleMode,
+        input.saleStartAt,
+        input.saleEndAt,
         input.thumbnail?.url ?? null,
         input.thumbnail?.pathname ?? null,
         nextSortOrder,
@@ -740,8 +823,11 @@ export async function updateProductRecord(
           price = $4,
           size_options = $5,
           color_options = $6,
-          thumbnail_url = $7,
-          thumbnail_pathname = $8,
+          sale_mode = $7,
+          sale_start_at = $8,
+          sale_end_at = $9,
+          thumbnail_url = $10,
+          thumbnail_pathname = $11,
           updated_at = NOW()
         WHERE id = $1
       `,
@@ -752,6 +838,9 @@ export async function updateProductRecord(
         input.price,
         input.sizeOptions,
         input.colorOptions,
+        input.saleMode,
+        input.saleStartAt,
+        input.saleEndAt,
         thumbnailUrl,
         thumbnailPathname,
       ],

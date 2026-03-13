@@ -34,8 +34,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
       clientId: getRequiredEnv("AUTH_KAKAO_ID", "KAKAO_REST_API_KEY"),
       clientSecret: getRequiredEnv("AUTH_KAKAO_SECRET", "KAKAO_CLIENT_SECRET"),
       authorization: {
+        url: "https://kauth.kakao.com/oauth/authorize",
         params: {
-          scope: "profile_nickname profile_image account_email",
+          scope: "profile_nickname profile_image",
         },
       },
     }),

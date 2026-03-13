@@ -16,6 +16,7 @@ type MemberUserRow = {
 
 type CurrentMemberRow = {
   id: string;
+  kakaoUserId: string | number;
   email: string | null;
   nickname: string;
   profileImageUrl: string | null;
@@ -116,7 +117,7 @@ function normalizeKakaoProfile(profile: KakaoMemberProfile) {
   };
 }
 
-export function sanitizeReturnTo(value?: string | null, fallback = "/mypage") {
+export function sanitizeReturnTo(value?: string | null, fallback = "/") {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
     return fallback;
   }
@@ -128,6 +129,42 @@ export function appendSearchParam(path: string, key: string, value: string) {
   const url = new URL(path, "http://localhost");
   url.searchParams.set(key, value);
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function parseAdminAllowlist(value?: string) {
+  return new Set(
+    (value ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+}
+
+export function isAdminMember(input: {
+  kakaoUserId?: string | number | null;
+  email?: string | null;
+}) {
+  const adminKakaoUserIds = parseAdminAllowlist(process.env.ADMIN_KAKAO_USER_IDS);
+  const adminEmails = new Set(
+    Array.from(parseAdminAllowlist(process.env.ADMIN_EMAILS)).map((email) =>
+      email.toLowerCase(),
+    ),
+  );
+  const kakaoUserId =
+    input.kakaoUserId === null || input.kakaoUserId === undefined
+      ? ""
+      : String(input.kakaoUserId).trim();
+  const email = input.email?.trim().toLowerCase() ?? "";
+
+  if (kakaoUserId && adminKakaoUserIds.has(kakaoUserId)) {
+    return true;
+  }
+
+  if (email && adminEmails.has(email)) {
+    return true;
+  }
+
+  return false;
 }
 
 export async function ensureMemberSchema() {
@@ -197,6 +234,7 @@ export async function getMemberById(id: string): Promise<CurrentMember | null> {
     `
       SELECT
         id,
+        kakao_user_id AS "kakaoUserId",
         email,
         nickname,
         profile_image_url AS "profileImageUrl"
@@ -214,8 +252,13 @@ export async function getMemberById(id: string): Promise<CurrentMember | null> {
 
   return {
     id: row.id,
+    kakaoUserId: String(row.kakaoUserId),
     email: row.email,
     nickname: row.nickname,
     profileImageUrl: row.profileImageUrl,
+    isAdmin: isAdminMember({
+      kakaoUserId: row.kakaoUserId,
+      email: row.email,
+    }),
   };
 }

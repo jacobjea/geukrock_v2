@@ -31,6 +31,13 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+@media (min-width: 1280px) {
+  html {
+    font-size: 17px;
+  }
 }
 
 body {
@@ -41,12 +48,27 @@ body {
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-weight: 430;
+  line-height: 1.55;
   text-rendering: optimizeLegibility;
+}
+
+@media (min-width: 1280px) {
+  body {
+    font-weight: 460;
+  }
 }
 
 a,
 button {
   -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 input::placeholder {
@@ -56,4 +78,28 @@ input::placeholder {
 ::selection {
   background: #111111;
   color: #f8f6f2;
+}
+
+.text-black\/40,
+.text-black\/42,
+.text-black\/44,
+.text-black\/46,
+.text-black\/48 {
+  color: rgb(17 17 17 / 0.64);
+}
+
+.text-black\/52,
+.text-black\/56,
+.text-black\/58,
+.text-black\/60,
+.text-black\/62 {
+  color: rgb(17 17 17 / 0.74);
+}
+
+.text-black\/66,
+.text-black\/70,
+.text-black\/72,
+.text-black\/74,
+.text-black\/88 {
+  color: rgb(17 17 17 / 0.84);
 }

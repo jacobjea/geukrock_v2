@@ -1,3 +1,4 @@
+import { getCurrentMember } from "@/lib/auth";
 import { updateGuestCartItemQuantityFromRequest } from "@/lib/cart";
 
 interface UpdateCartItemRequest {
@@ -9,6 +10,12 @@ export const dynamic = "force-dynamic";
 
 export async function PATCH(request: Request) {
   try {
+    const currentMember = await getCurrentMember();
+
+    if (!currentMember) {
+      return Response.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
     const body = (await request.json()) as UpdateCartItemRequest;
 
     if (!body.cartItemId || typeof body.cartItemId !== "string") {

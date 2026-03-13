@@ -15,10 +15,15 @@ import {
 import type { ProductDetail, ProductFormState } from "@/types/admin-product";
 import { initialProductFormState } from "@/types/admin-product";
 import {
+  formatSaleDateTimeInput,
+  formatSalePeriod,
+} from "@/lib/product-sale";
+import {
   PRODUCT_COLORS,
   PRODUCT_COLOR_LABELS,
   PRODUCT_COLOR_SWATCHES,
   PRODUCT_SIZES,
+  type ProductSaleMode,
 } from "@/types/product";
 
 import { SubmitButton } from "./SubmitButton";
@@ -148,6 +153,15 @@ export function ProductForm({
     initialProduct?.price !== undefined
       ? formatPriceInput(String(initialProduct.price))
       : "",
+  );
+  const [saleMode, setSaleMode] = useState<ProductSaleMode>(
+    initialProduct?.saleMode ?? "always",
+  );
+  const [saleStartInput, setSaleStartInput] = useState(() =>
+    formatSaleDateTimeInput(initialProduct?.saleStartAt),
+  );
+  const [saleEndInput, setSaleEndInput] = useState(() =>
+    formatSaleDateTimeInput(initialProduct?.saleEndAt),
   );
 
   useEffect(() => {
@@ -310,6 +324,106 @@ export function ProductForm({
               {state.fieldErrors.price ? (
                 <p className="mt-2 text-sm text-[#d9534f]">
                   {state.fieldErrors.price}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="grid gap-3 px-5 py-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-start">
+            <div className="pt-2 text-sm font-medium text-[#374151]">
+              판매 기간
+            </div>
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded border border-[#cfd5dd] bg-white px-3 py-2 text-sm hover:bg-[#f7f8fa]">
+                  <input
+                    name="saleMode"
+                    type="radio"
+                    value="always"
+                    checked={saleMode === "always"}
+                    onChange={() => setSaleMode("always")}
+                    className="h-4 w-4 border-[#cfd5dd]"
+                  />
+                  <span>상시 판매</span>
+                </label>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded border border-[#cfd5dd] bg-white px-3 py-2 text-sm hover:bg-[#f7f8fa]">
+                  <input
+                    name="saleMode"
+                    type="radio"
+                    value="period"
+                    checked={saleMode === "period"}
+                    onChange={() => setSaleMode("period")}
+                    className="h-4 w-4 border-[#cfd5dd]"
+                  />
+                  <span>기간 판매</span>
+                </label>
+              </div>
+
+              {saleMode === "period" ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[#374151]">
+                      판매 시작
+                    </label>
+                    <input
+                      name="saleStartAt"
+                      type="datetime-local"
+                      value={saleStartInput}
+                      onChange={(event) => setSaleStartInput(event.target.value)}
+                      className="w-full rounded border border-[#cfd5dd] px-3 py-2 text-sm outline-none focus:border-[#2f6fed]"
+                    />
+                    {state.fieldErrors.saleStartAt ? (
+                      <p className="mt-2 text-sm text-[#d9534f]">
+                        {state.fieldErrors.saleStartAt}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[#374151]">
+                      판매 종료
+                    </label>
+                    <input
+                      name="saleEndAt"
+                      type="datetime-local"
+                      value={saleEndInput}
+                      onChange={(event) => setSaleEndInput(event.target.value)}
+                      className="w-full rounded border border-[#cfd5dd] px-3 py-2 text-sm outline-none focus:border-[#2f6fed]"
+                    />
+                    {state.fieldErrors.saleEndAt ? (
+                      <p className="mt-2 text-sm text-[#d9534f]">
+                        {state.fieldErrors.saleEndAt}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <input name="saleStartAt" type="hidden" value="" />
+                  <input name="saleEndAt" type="hidden" value="" />
+                </>
+              )}
+
+              <div className="rounded border border-[#e5e7eb] bg-[#f8f9fb] px-3 py-3 text-xs leading-6 text-[#6b7280]">
+                {saleMode === "always"
+                  ? "상시 판매를 선택하면 주문 가능 시간이 항상 열려 있습니다."
+                  : "기간 판매를 선택하면 상세 페이지에 남은 시간이 실시간으로 표시되고, 기간 외에는 주문이 막힙니다."}
+                {initialProduct?.saleMode === "period" &&
+                initialProduct.saleStartAt &&
+                initialProduct.saleEndAt ? (
+                  <p className="mt-1 text-[#4b5563]">
+                    현재 저장된 기간:{" "}
+                    {formatSalePeriod(
+                      initialProduct.saleStartAt,
+                      initialProduct.saleEndAt,
+                    )}
+                  </p>
+                ) : null}
+              </div>
+
+              {state.fieldErrors.saleMode ? (
+                <p className="text-sm text-[#d9534f]">
+                  {state.fieldErrors.saleMode}
                 </p>
               ) : null}
             </div>

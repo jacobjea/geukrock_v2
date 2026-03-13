@@ -1,5 +1,11 @@
 import type { ProductColor, ProductSize } from "./product";
 
+export interface GuestCartSelectionInput {
+  selectedSize: ProductSize;
+  selectedColor: ProductColor;
+  quantity: number;
+}
+
 export interface GuestCartItem {
   itemId: string;
   productId: string;
