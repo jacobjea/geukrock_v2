@@ -425,7 +425,6 @@ export function CarouselManager({
             className="sr-only"
             onChange={(event) => {
               handleAddImages(Array.from(event.target.files ?? []));
-              event.currentTarget.value = "";
             }}
           />
 

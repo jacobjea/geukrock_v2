@@ -8,9 +8,8 @@ import type {
 } from "@/types/product";
 
 export const navigationItems: NavigationItem[] = [
-  { label: "New In", href: "#new-in" },
-  { label: "Editorial", href: "#promo" },
-  { label: "Editor Picks", href: "#editor-picks" },
+  { label: "Home", href: "/" },
+  { label: "Shop", href: "#new-in" },
 ];
 
 export const footerLinks: FooterLink[] = [

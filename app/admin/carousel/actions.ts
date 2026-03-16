@@ -55,6 +55,7 @@ export async function saveCarouselAction(
     .filter((value): value is string => typeof value === "string" && value.length > 0);
   const randomizeOrder = formData.get("randomizeOrder") === "on";
   const fieldErrors: CarouselFormState["fieldErrors"] = {};
+  const hasPendingNewImages = slideOrder.some((token) => token === "new");
 
   for (const file of images) {
     if (!file.type.startsWith("image/")) {
@@ -66,6 +67,11 @@ export async function saveCarouselAction(
       fieldErrors.images = "캐러셀 이미지는 10MB 이하만 업로드할 수 있습니다.";
       break;
     }
+  }
+
+  if (hasPendingNewImages && !images.length) {
+    fieldErrors.images =
+      "새로 추가한 캐러셀 이미지가 전달되지 않았습니다. 이미지를 다시 선택하거나 드래그해 주세요.";
   }
 
   if (Object.keys(fieldErrors).length) {

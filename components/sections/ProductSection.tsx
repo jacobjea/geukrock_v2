@@ -58,7 +58,7 @@ export function ProductSection({ products }: ProductSectionProps) {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-3">
             <p className="text-[12px] font-medium uppercase tracking-[0.24em] text-black/62">
-              New In
+              Shop
             </p>
             <h2 className="text-[2.15rem] font-semibold leading-[1.02] tracking-[-0.07em] text-black sm:text-[2.9rem]">
               극락 크루티

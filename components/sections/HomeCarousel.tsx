@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { getResizedImageUrl } from "@/lib/image-url";
 import type { StorefrontCarouselSlide } from "@/types/carousel";
@@ -13,13 +13,16 @@ interface HomeCarouselProps {
 
 export function HomeCarousel({ slides }: HomeCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isAutoplayPaused, setIsAutoplayPaused] = useState(false);
+  const containerRef = useRef<HTMLElement | null>(null);
+  const resumeTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     setActiveIndex(0);
   }, [slides.length]);
 
   useEffect(() => {
-    if (slides.length < 2) {
+    if (slides.length < 2 || isAutoplayPaused) {
       return;
     }
 
@@ -30,7 +33,15 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
     return () => {
       window.clearInterval(timer);
     };
-  }, [slides.length]);
+  }, [isAutoplayPaused, slides.length]);
+
+  useEffect(() => {
+    return () => {
+      if (resumeTimeoutRef.current !== null) {
+        window.clearTimeout(resumeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!slides.length) {
     return null;
@@ -38,10 +49,32 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
 
   const canNavigate = slides.length > 1;
 
+  function clearResumeTimeout() {
+    if (resumeTimeoutRef.current !== null) {
+      window.clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = null;
+    }
+  }
+
+  function pauseAutoplay() {
+    clearResumeTimeout();
+    setIsAutoplayPaused(true);
+  }
+
+  function scheduleAutoplayResume() {
+    clearResumeTimeout();
+    resumeTimeoutRef.current = window.setTimeout(() => {
+      setIsAutoplayPaused(false);
+      resumeTimeoutRef.current = null;
+    }, 1000);
+  }
+
   function moveSlide(direction: "prev" | "next") {
     if (!canNavigate) {
       return;
     }
+
+    pauseAutoplay();
 
     setActiveIndex((currentIndex) => {
       if (direction === "prev") {
@@ -50,25 +83,48 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
 
       return (currentIndex + 1) % slides.length;
     });
+
+    scheduleAutoplayResume();
   }
 
   return (
-    <section className="px-5 pt-6 sm:px-8 sm:pt-8 lg:px-12">
-      <div className="mx-auto max-w-[1440px]">
-        <div className="relative overflow-hidden rounded-[32px] border border-black/10 bg-[#111111]">
+    <section
+      ref={containerRef}
+      className="px-5 pt-6 sm:px-8 sm:pt-8 lg:px-12"
+      onPointerEnter={pauseAutoplay}
+      onPointerLeave={scheduleAutoplayResume}
+      onTouchStart={pauseAutoplay}
+      onTouchEnd={scheduleAutoplayResume}
+      onTouchCancel={scheduleAutoplayResume}
+      onFocusCapture={pauseAutoplay}
+      onBlurCapture={(event) => {
+        const nextFocusedTarget = event.relatedTarget;
+
+        if (
+          nextFocusedTarget instanceof Node &&
+          containerRef.current?.contains(nextFocusedTarget)
+        ) {
+          return;
+        }
+
+        scheduleAutoplayResume();
+      }}
+    >
+      <div className="mx-auto max-w-[980px]">
+        <div className="relative overflow-hidden rounded-[32px] border border-black/10 bg-[#090909]">
           <div
             className="flex transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{ transform: `translateX(-${activeIndex * 100}%)` }}
           >
             {slides.map((slide, index) => (
               <div key={slide.id} className="relative min-w-full">
-                <div className="relative aspect-[16/9] min-h-[340px] sm:min-h-[420px] lg:min-h-[560px]">
+                <div className="relative aspect-[16/10] min-h-[190px] sm:min-h-[250px] lg:min-h-[320px]">
                   <img
                     src={getResizedImageUrl(slide.imageUrl, 2200) ?? slide.imageUrl}
                     alt={`홈 캐러셀 이미지 ${index + 1}`}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                   />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.12),rgba(0,0,0,0.28)_75%,rgba(0,0,0,0.42))]" />
+                  <div className="absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,rgba(9,9,9,0)_0%,rgba(9,9,9,0.3)_100%)] sm:h-32" />
                 </div>
               </div>
             ))}
@@ -76,7 +132,7 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
 
           <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-5 py-5 sm:px-7">
             <div className="rounded-full border border-white/12 bg-black/18 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.24em] text-white/78 backdrop-blur-sm">
-              GEUKROCK / CAROUSEL
+              GEUKROCK Members
             </div>
             <div className="rounded-full border border-white/12 bg-black/18 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/78 backdrop-blur-sm">
               {String(activeIndex + 1).padStart(2, "0")} /{" "}
@@ -114,7 +170,11 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
                   <button
                     key={slide.id}
                     type="button"
-                    onClick={() => setActiveIndex(index)}
+                    onClick={() => {
+                      pauseAutoplay();
+                      setActiveIndex(index);
+                      scheduleAutoplayResume();
+                    }}
                     aria-label={`${index + 1}번 캐러셀 이미지 보기`}
                     className={`h-2.5 rounded-full transition-all duration-300 ${
                       isActive ? "w-8 bg-white" : "w-2.5 bg-white/42 hover:bg-white/68"
