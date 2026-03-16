@@ -61,13 +61,9 @@ export function ProductSection({ products }: ProductSectionProps) {
               New In
             </p>
             <h2 className="text-[2.15rem] font-semibold leading-[1.02] tracking-[-0.07em] text-black sm:text-[2.9rem]">
-              최근 등록된 상품
+              극락 크루티
             </h2>
           </div>
-          <p className="max-w-lg text-[15px] leading-7 text-black/72">
-            관리자 화면에서 등록한 상품이 이 영역과 상세 페이지에 바로
-            반영됩니다.
-          </p>
         </div>
 
         {products.length ? (

@@ -18,7 +18,7 @@ export default async function AdminLayout({
               GEUKROCK 관리자
             </h1>
             <span className="mt-1 block text-xs text-[#6b7280] sm:text-sm">
-              상품 / 주문 관리
+              상품 / 주문 / 캐러셀 관리
             </span>
           </div>
           <nav className="grid w-full grid-cols-2 gap-2 text-sm sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
@@ -27,6 +27,12 @@ export default async function AdminLayout({
               className="inline-flex items-center justify-center rounded border border-[#d9dde3] bg-white px-3 py-2 text-center hover:bg-[#f7f8fa]"
             >
               상품 관리
+            </Link>
+            <Link
+              href="/admin/carousel"
+              className="inline-flex items-center justify-center rounded border border-[#d9dde3] bg-white px-3 py-2 text-center hover:bg-[#f7f8fa]"
+            >
+              캐러셀 관리
             </Link>
             <Link
               href="/admin/orders"

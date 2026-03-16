@@ -34,13 +34,19 @@ function getFileExtension(file: File) {
   return extension.toLowerCase();
 }
 
-function getImageResizePreset(folder: "thumbnails" | "details") {
+function getImageResizePreset(folder: "thumbnails" | "details" | "carousel") {
   return folder === "thumbnails"
     ? {
         width: 1200,
         height: 1200,
         quality: 80,
       }
+    : folder === "carousel"
+      ? {
+          width: 2400,
+          height: 1600,
+          quality: 84,
+        }
     : {
         width: 1800,
         height: 2400,
@@ -56,7 +62,7 @@ function shouldOptimizeImage(file: File) {
 
 async function prepareProductImageUpload(
   file: File,
-  folder: "thumbnails" | "details",
+  folder: "thumbnails" | "details" | "carousel",
 ) {
   const originalBuffer = Buffer.from(await file.arrayBuffer());
 
@@ -102,7 +108,7 @@ async function prepareProductImageUpload(
 
 export async function uploadProductImage(
   file: File,
-  folder: "thumbnails" | "details",
+  folder: "thumbnails" | "details" | "carousel",
   productName: string,
 ): Promise<BlobAsset> {
   if (!file.type.startsWith("image/")) {

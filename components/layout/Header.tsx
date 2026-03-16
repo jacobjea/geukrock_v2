@@ -152,7 +152,6 @@ export async function Header() {
             </Link>
 
             <div className="hidden items-center gap-4 text-[12px] font-medium uppercase tracking-[0.22em] text-black/62 xl:flex">
-              <span>Seoul</span>
               <span className="h-3 w-px bg-black/10" />
               {currentMember ? <span>{currentMember.nickname}</span> : <span>Curated Daily</span>}
             </div>
