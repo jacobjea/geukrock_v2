@@ -148,14 +148,6 @@ export default async function ProductDetailPage({
                   </div>
                 </dl>
               </div>
-
-              <div className="border border-black/10 bg-[#f7f4ee] px-5 py-5">
-                <p className="text-[15px] font-semibold text-black">안내 문구</p>
-                <p className="mt-3 text-[15px] leading-7 text-black/72">
-                  무신사형 패션 상세 페이지 흐름을 참고해 이미지 확인과 구매 정보
-                  확인이 먼저 오도록 구성했습니다.
-                </p>
-              </div>
             </div>
           </section>
 
@@ -200,26 +192,34 @@ export default async function ProductDetailPage({
             <div className="border border-black/10 bg-white px-5 py-5">
               <p className="text-[15px] font-semibold text-black">배송 안내</p>
               <ul className="mt-4 space-y-2 text-[15px] leading-7 text-black/72">
-                <li>결제 확인 후 평균 1~3일 이내 출고됩니다.</li>
-                <li>도서산간 및 일부 지역은 추가 배송일이 소요될 수 있습니다.</li>
-                <li>주문량 증가 시 출고 일정이 지연될 수 있습니다.</li>
+                <li>접수 마감 후 평균 2~4일 이내에 출고됩니다.</li>
+                <li>출고된 물품은 이후 정모 당일에 직접 전달될 예정입니다.</li>
+                <li>주문량이 많을 경우 출고 일정이 다소 지연될 수 있습니다.</li>
               </ul>
             </div>
 
             <div className="border border-black/10 bg-white px-5 py-5">
               <p className="text-[15px] font-semibold text-black">교환/반품 안내</p>
               <ul className="mt-4 space-y-2 text-[15px] leading-7 text-black/72">
-                <li>수령 후 7일 이내 교환/반품 접수가 가능합니다.</li>
-                <li>착용 흔적이나 훼손이 있는 경우 접수가 제한될 수 있습니다.</li>
-                <li>상세 이미지와 설명을 충분히 확인한 뒤 주문해 주세요.</li>
+                <li>단순 변심으로 인한 환불 및 반품은 어려운 점 양해 부탁드립니다.</li>
+                <li>상품 수령 당일에 한해 상품에 이상이 있을 경우 환불 및 반품이 가능합니다.</li>
+                <li>주문 전 상세 이미지와 사이즈 규격을 충분히 확인해 주세요.</li>
               </ul>
             </div>
 
             <div className="border border-black/10 bg-[#f7f4ee] px-5 py-5">
-              <p className="text-[15px] font-semibold text-black">참고 포인트</p>
+              <p className="text-[15px] font-semibold text-black">참고</p>
               <p className="mt-4 text-[15px] leading-7 text-black/72">
-                상단에서는 이미지와 가격 정보가 먼저 보이고, 하단에서는 긴 상세
-                콘텐츠를 이어서 보는 한국 패션 쇼핑몰 방식으로 정리했습니다.
+                모든 상품은 하이티에서 제작을 맡기고 있습니다.
+                색상 추가 건의 가능합니다. 아래 링크를 참고해주세요.
+                <a
+                  href="https://hitee.co.kr/shop/view/151781590604"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 block underline"
+                >
+                  하이티 제품 확인 링크
+                </a>
               </p>
             </div>
           </section>
