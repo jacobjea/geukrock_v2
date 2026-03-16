@@ -15,7 +15,7 @@ import {
 import type { ProductDetail, ProductFormState } from "@/types/admin-product";
 import { initialProductFormState } from "@/types/admin-product";
 import {
-  formatSaleDateTimeInput,
+  formatSaleDateInput,
   formatSalePeriod,
 } from "@/lib/product-sale";
 import {
@@ -278,10 +278,10 @@ export function ProductForm({
     initialProduct?.saleMode ?? "always",
   );
   const [saleStartInput, setSaleStartInput] = useState(() =>
-    formatSaleDateTimeInput(initialProduct?.saleStartAt),
+    formatSaleDateInput(initialProduct?.saleStartAt),
   );
   const [saleEndInput, setSaleEndInput] = useState(() =>
-    formatSaleDateTimeInput(initialProduct?.saleEndAt),
+    formatSaleDateInput(initialProduct?.saleEndAt),
   );
 
   useEffect(() => {
@@ -623,7 +623,7 @@ export function ProductForm({
                     </label>
                     <input
                       name="saleStartAt"
-                      type="datetime-local"
+                      type="date"
                       value={saleStartInput}
                       onChange={(event) => setSaleStartInput(event.target.value)}
                       className="w-full rounded border border-[#cfd5dd] px-3 py-2 text-sm outline-none focus:border-[#2f6fed]"
@@ -641,7 +641,7 @@ export function ProductForm({
                     </label>
                     <input
                       name="saleEndAt"
-                      type="datetime-local"
+                      type="date"
                       value={saleEndInput}
                       onChange={(event) => setSaleEndInput(event.target.value)}
                       className="w-full rounded border border-[#cfd5dd] px-3 py-2 text-sm outline-none focus:border-[#2f6fed]"
@@ -663,7 +663,7 @@ export function ProductForm({
               <div className="rounded border border-[#e5e7eb] bg-[#f8f9fb] px-3 py-3 text-xs leading-6 text-[#6b7280]">
                 {saleMode === "always"
                   ? "상시 판매를 선택하면 주문 가능 시간이 항상 열려 있습니다."
-                  : "기간 판매를 선택하면 상세 페이지에 남은 시간이 실시간으로 표시되고, 기간 외에는 주문이 막힙니다."}
+                  : "기간 판매를 선택하면 시작 날짜는 00:00부터, 종료 날짜는 23:59:59까지 자동으로 적용됩니다."}
                 {initialProduct?.saleMode === "period" &&
                 initialProduct.saleStartAt &&
                 initialProduct.saleEndAt ? (

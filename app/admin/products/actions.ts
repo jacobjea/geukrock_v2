@@ -6,7 +6,7 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 import { deleteProductImages, uploadProductImage } from "@/lib/admin/blob";
 import { requireCurrentAdmin } from "@/lib/auth";
-import { parseKstDateTimeInput } from "@/lib/product-sale";
+import { parseKstDateInput } from "@/lib/product-sale";
 import {
   createProductRecord,
   deleteProductRecord,
@@ -115,9 +115,11 @@ function validateProductForm(formData: FormData) {
     ? saleModeValue
     : "always";
   const saleStartAt =
-    saleMode === "period" ? parseKstDateTimeInput(saleStartAtValue) : null;
+    saleMode === "period"
+      ? parseKstDateInput(saleStartAtValue, "start")
+      : null;
   const saleEndAt =
-    saleMode === "period" ? parseKstDateTimeInput(saleEndAtValue) : null;
+    saleMode === "period" ? parseKstDateInput(saleEndAtValue, "end") : null;
 
   if (!name) {
     fieldErrors.name = "상품명을 입력해 주세요.";
@@ -137,19 +139,19 @@ function validateProductForm(formData: FormData) {
 
   if (saleMode === "period") {
     if (!saleStartAtValue) {
-      fieldErrors.saleStartAt = "판매 시작 일시를 입력해 주세요.";
+      fieldErrors.saleStartAt = "판매 시작 날짜를 입력해 주세요.";
     } else if (!saleStartAt) {
-      fieldErrors.saleStartAt = "판매 시작 일시 형식을 확인해 주세요.";
+      fieldErrors.saleStartAt = "판매 시작 날짜 형식을 확인해 주세요.";
     }
 
     if (!saleEndAtValue) {
-      fieldErrors.saleEndAt = "판매 종료 일시를 입력해 주세요.";
+      fieldErrors.saleEndAt = "판매 종료 날짜를 입력해 주세요.";
     } else if (!saleEndAt) {
-      fieldErrors.saleEndAt = "판매 종료 일시 형식을 확인해 주세요.";
+      fieldErrors.saleEndAt = "판매 종료 날짜 형식을 확인해 주세요.";
     }
 
     if (saleStartAt && saleEndAt && new Date(saleStartAt) >= new Date(saleEndAt)) {
-      fieldErrors.saleEndAt = "판매 종료 일시는 시작 일시보다 늦어야 합니다.";
+      fieldErrors.saleEndAt = "판매 종료 날짜는 시작 날짜보다 늦어야 합니다.";
     }
   }
 

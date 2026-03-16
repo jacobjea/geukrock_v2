@@ -45,31 +45,36 @@ function getKstParts(value: string | Date | null | undefined) {
   };
 }
 
-export function parseKstDateTimeInput(value: string) {
+export function parseKstDateInput(
+  value: string,
+  boundary: "start" | "end",
+) {
   const normalized = value.trim();
 
   if (!normalized) {
     return null;
   }
 
-  const match = normalized.match(
-    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/,
-  );
+  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
   if (!match) {
     return null;
   }
 
-  const [, year, month, day, hour, minute] = match;
+  const [, year, month, day] = match;
+  const hour = boundary === "start" ? 0 : 23;
+  const minute = boundary === "start" ? 0 : 59;
+  const second = boundary === "start" ? 0 : 59;
+  const millisecond = boundary === "start" ? 0 : 999;
   const utcTime =
     Date.UTC(
       Number(year),
       Number(month) - 1,
       Number(day),
-      Number(hour),
-      Number(minute),
-      0,
-      0,
+      hour,
+      minute,
+      second,
+      millisecond,
     ) - KST_OFFSET_MS;
 
   return new Date(utcTime).toISOString();
@@ -93,16 +98,14 @@ export function formatSaleDateTime(value: string | Date | null | undefined) {
   }).format(date);
 }
 
-export function formatSaleDateTimeInput(
-  value: string | Date | null | undefined,
-) {
+export function formatSaleDateInput(value: string | Date | null | undefined) {
   const parts = getKstParts(value);
 
   if (!parts) {
     return "";
   }
 
-  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 export function formatSalePeriod(
