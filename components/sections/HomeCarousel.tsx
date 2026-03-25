@@ -18,10 +18,6 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
   const resumeTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setActiveIndex(0);
-  }, [slides.length]);
-
-  useEffect(() => {
     if (slides.length < 2 || isAutoplayPaused) {
       return;
     }
@@ -48,6 +44,8 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
   }
 
   const canNavigate = slides.length > 1;
+  const safeActiveIndex =
+    activeIndex >= 0 && activeIndex < slides.length ? activeIndex : 0;
 
   function clearResumeTimeout() {
     if (resumeTimeoutRef.current !== null) {
@@ -114,7 +112,7 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
         <div className="relative overflow-hidden rounded-[32px] border border-black/10 bg-[#090909]">
           <div
             className="flex transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-            style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+            style={{ transform: `translateX(-${safeActiveIndex * 100}%)` }}
           >
             {slides.map((slide, index) => (
               <div key={slide.id} className="relative min-w-full">
@@ -123,6 +121,9 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
                     src={getResizedImageUrl(slide.imageUrl, 2200) ?? slide.imageUrl}
                     alt={`홈 캐러셀 이미지 ${index + 1}`}
                     className="h-full w-full object-contain"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    fetchPriority={index === 0 ? "high" : "low"}
                   />
                   <div className="absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,rgba(9,9,9,0)_0%,rgba(9,9,9,0.3)_100%)] sm:h-32" />
                 </div>
@@ -135,7 +136,7 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
               GEUKROCK Members
             </div>
             <div className="rounded-full border border-white/12 bg-black/18 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/78 backdrop-blur-sm">
-              {String(activeIndex + 1).padStart(2, "0")} /{" "}
+              {String(safeActiveIndex + 1).padStart(2, "0")} /{" "}
               {String(slides.length).padStart(2, "0")}
             </div>
           </div>
@@ -164,7 +165,7 @@ export function HomeCarousel({ slides }: HomeCarouselProps) {
           {canNavigate ? (
             <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/12 bg-black/18 px-3 py-2 backdrop-blur-sm">
               {slides.map((slide, index) => {
-                const isActive = index === activeIndex;
+                const isActive = index === safeActiveIndex;
 
                 return (
                   <button

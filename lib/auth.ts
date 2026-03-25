@@ -1,12 +1,13 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { auth } from "@/auth";
 import { getMemberById } from "@/lib/member-auth";
 import type { CurrentMember } from "@/types/member";
 
-export async function getCurrentMember(): Promise<CurrentMember | null> {
+const getCurrentMemberCached = cache(async (): Promise<CurrentMember | null> => {
   const session = await auth();
   const memberId = session?.user?.id;
 
@@ -28,6 +29,10 @@ export async function getCurrentMember(): Promise<CurrentMember | null> {
     profileImageUrl: session.user.image ?? null,
     isAdmin: false,
   };
+});
+
+export async function getCurrentMember(): Promise<CurrentMember | null> {
+  return getCurrentMemberCached();
 }
 
 export async function requireCurrentAdmin() {

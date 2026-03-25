@@ -9,11 +9,9 @@ import { Header } from "@/components/layout/Header";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductPurchasePanel } from "@/components/product/ProductPurchasePanel";
 import { getCurrentMember } from "@/lib/auth";
-import { getStorefrontProductById } from "@/lib/admin/products";
 import { getResizedImageUrl } from "@/lib/image-url";
+import { getCachedStorefrontProductById } from "@/lib/storefront-cache";
 import { PRODUCT_COLOR_LABELS } from "@/types/product";
-
-export const dynamic = "force-dynamic";
 
 interface ProductDetailPageProps {
   params: Promise<{
@@ -25,7 +23,7 @@ export async function generateMetadata({
   params,
 }: ProductDetailPageProps): Promise<Metadata> {
   const { productId } = await params;
-  const product = await getStorefrontProductById(productId);
+  const product = await getCachedStorefrontProductById(productId);
 
   if (!product) {
     return {
@@ -45,7 +43,7 @@ export default async function ProductDetailPage({
   const { productId } = await params;
   const nowIso = new Date().toISOString();
   const [product, currentMember] = await Promise.all([
-    getStorefrontProductById(productId),
+    getCachedStorefrontProductById(productId),
     getCurrentMember(),
   ]);
 
@@ -57,15 +55,15 @@ export default async function ProductDetailPage({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header />
+      <Header currentMember={currentMember} />
       <main className="pb-24">
         <div className="mx-auto max-w-[1440px] px-5 pb-16 pt-6 sm:px-8 lg:px-12">
           <nav className="flex flex-wrap items-center gap-2 text-[13px] text-black/62">
-            <Link href="/" className="hover:text-black">
+            <Link href="/" prefetch={false} className="hover:text-black">
               홈
             </Link>
             <span>/</span>
-            <Link href="/#new-in" className="hover:text-black">
+            <Link href="/#new-in" prefetch={false} className="hover:text-black">
               상품
             </Link>
             <span>/</span>
@@ -174,6 +172,8 @@ export default async function ProductDetailPage({
                       src={getResizedImageUrl(image.url, 1240) ?? image.url}
                       alt={`${product.name} 상세 이미지 ${index + 1}`}
                       className="w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                 ))}

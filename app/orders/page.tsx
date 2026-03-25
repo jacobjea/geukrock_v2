@@ -5,7 +5,6 @@ import { CartOrderCheckoutPage } from "@/components/order/CartOrderCheckoutPage"
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { OrderCheckoutPage } from "@/components/order/OrderCheckoutPage";
-import { getStorefrontProductById } from "@/lib/admin/products";
 import { getCurrentMember } from "@/lib/auth";
 import { getGuestCartSnapshotFromRequest } from "@/lib/cart";
 import { getOrderCheckoutSessionFromRequest } from "@/lib/order-checkout-session";
@@ -13,11 +12,14 @@ import {
   formatSalePeriod,
   getProductSaleStatus,
 } from "@/lib/product-sale";
+import { getCachedStorefrontProductById } from "@/lib/storefront-cache";
 import { getTossRecipientInfo } from "@/lib/toss-transfer";
+import type { CurrentMember } from "@/types/member";
 
 export const dynamic = "force-dynamic";
 
 interface OrdersLayoutProps {
+  currentMember: CurrentMember;
   breadcrumbItems: Array<{
     href?: string;
     label: string;
@@ -29,6 +31,7 @@ interface OrdersLayoutProps {
 }
 
 function OrdersLayout({
+  currentMember,
   breadcrumbItems,
   eyebrow,
   title,
@@ -37,7 +40,7 @@ function OrdersLayout({
 }: OrdersLayoutProps) {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header />
+      <Header currentMember={currentMember} />
       <main className="pb-24">
         <div className="mx-auto max-w-[1440px] px-5 pb-16 pt-6 sm:px-8 lg:px-12">
           <nav className="flex flex-wrap items-center gap-2 text-[13px] text-black/62">
@@ -45,7 +48,7 @@ function OrdersLayout({
               <div key={`${item.label}-${index}`} className="contents">
                 {index > 0 ? <span>/</span> : null}
                 {item.href ? (
-                  <Link href={item.href} className="hover:text-black">
+                  <Link href={item.href} prefetch={false} className="hover:text-black">
                     {item.label}
                   </Link>
                 ) : (
@@ -106,6 +109,7 @@ export default async function OrdersPage() {
 
     return (
       <OrdersLayout
+        currentMember={currentMember}
         breadcrumbItems={[
           { href: "/", label: "홈" },
           { href: "/cart", label: "장바구니" },
@@ -142,7 +146,7 @@ export default async function OrdersPage() {
     );
   }
 
-  const product = await getStorefrontProductById(checkoutSession.productId);
+  const product = await getCachedStorefrontProductById(checkoutSession.productId);
 
   if (!product) {
     notFound();
@@ -165,6 +169,7 @@ export default async function OrdersPage() {
 
   return (
     <OrdersLayout
+      currentMember={currentMember}
       breadcrumbItems={[
         { href: "/", label: "홈" },
         { href: "/#new-in", label: "상품" },
