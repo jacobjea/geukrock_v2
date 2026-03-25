@@ -16,6 +16,7 @@ function ProductCard({ product }: { product: StorefrontProduct }) {
     <Link
       href={`/products/${product.id}`}
       className="group block focus:outline-none"
+      prefetch={false}
     >
       <article className="flex flex-col gap-4">
         <div className="relative aspect-[4/5] overflow-hidden rounded-[18px] border border-black/10 bg-black/[0.04] transition-transform duration-300 group-hover:-translate-y-1">
@@ -24,6 +25,8 @@ function ProductCard({ product }: { product: StorefrontProduct }) {
               src={getResizedImageUrl(product.thumbnailUrl, 960) ?? product.thumbnailUrl}
               alt={product.name}
               className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-black/64">

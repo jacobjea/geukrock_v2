@@ -49,6 +49,8 @@ export function ProductImageGallery({
                 src={getResizedImageUrl(image.url, 184) ?? image.url}
                 alt={`${productName} 썸네일 ${index + 1}`}
                 className="h-20 w-20 object-cover lg:h-[92px] lg:w-[92px]"
+                loading="lazy"
+                decoding="async"
               />
               <span className="absolute left-2 top-2 bg-black/78 px-1.5 py-0.5 text-[10px] font-medium text-white">
                 {image.kind === "thumbnail" ? "대표" : "상세"}
@@ -64,6 +66,9 @@ export function ProductImageGallery({
             src={getResizedImageUrl(selectedImage.url, 1400) ?? selectedImage.url}
             alt={productName}
             className="h-full w-full object-cover"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
         </div>
       </div>

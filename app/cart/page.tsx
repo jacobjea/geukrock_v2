@@ -60,7 +60,7 @@ export default async function CartPage({ searchParams }: CartPageProps) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header />
+      <Header currentMember={currentMember} />
       <main className="pb-24">
         <div className="mx-auto max-w-[1440px] px-5 pb-16 pt-6 sm:px-8 lg:px-12">
           <section className="border border-black/10 bg-white px-5 py-6 sm:px-7">

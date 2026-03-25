@@ -3,6 +3,7 @@ import Link from "next/link";
 import { signInWithKakaoAction, signOutAction } from "@/lib/auth-actions";
 import { getCurrentMember } from "@/lib/auth";
 import { navigationItems } from "@/lib/mock-data";
+import type { CurrentMember } from "@/types/member";
 
 function resolveNavigationHref(href: string) {
   return href.startsWith("#") ? `/${href}` : href;
@@ -132,8 +133,13 @@ function SignOutPowerIcon({ className = "" }: { className?: string }) {
   );
 }
 
-export async function Header() {
-  const currentMember = await getCurrentMember();
+interface HeaderProps {
+  currentMember?: CurrentMember | null;
+}
+
+export async function Header({ currentMember }: HeaderProps = {}) {
+  const resolvedCurrentMember =
+    currentMember === undefined ? await getCurrentMember() : currentMember;
   const actionItemClass =
     "inline-flex items-center gap-2 whitespace-nowrap text-[15px] font-medium text-black/84 transition-colors duration-200 hover:text-black";
   const mobileIconButtonClass =
@@ -147,13 +153,18 @@ export async function Header() {
             <Link
               className="shrink-0 text-[1.08rem] font-semibold tracking-[0.34em] text-black transition-opacity duration-300 hover:opacity-70"
               href="/"
+              prefetch={false}
             >
               GEUKROCK
             </Link>
 
             <div className="hidden items-center gap-4 text-[12px] font-medium uppercase tracking-[0.22em] text-black/62 xl:flex">
               <span className="h-3 w-px bg-black/10" />
-              {currentMember ? <span>{currentMember.nickname}</span> : <span>Curated Daily</span>}
+              {resolvedCurrentMember ? (
+                <span>{resolvedCurrentMember.nickname}</span>
+              ) : (
+                <span>Curated Daily</span>
+              )}
             </div>
           </div>
 
@@ -163,6 +174,7 @@ export async function Header() {
                 key={item.label}
                 className="text-[12px] font-medium uppercase tracking-[0.22em] text-black/84 transition-colors duration-300 hover:text-black"
                 href={resolveNavigationHref(item.href)}
+                prefetch={false}
               >
                 {item.label}
               </Link>
@@ -170,11 +182,12 @@ export async function Header() {
           </nav>
 
           <div className="flex items-center gap-2 min-[860px]:hidden">
-            {currentMember?.isAdmin ? (
+            {resolvedCurrentMember?.isAdmin ? (
               <Link
                 aria-label="관리자 페이지"
                 className={mobileIconButtonClass}
                 href="/admin"
+                prefetch={false}
               >
                 <AdminIcon className="h-4 w-4" />
               </Link>
@@ -183,6 +196,7 @@ export async function Header() {
               aria-label="마이페이지"
               className={mobileIconButtonClass}
               href="/mypage"
+              prefetch={false}
             >
               <UserIcon className="h-4 w-4" />
             </Link>
@@ -190,10 +204,11 @@ export async function Header() {
               aria-label="장바구니"
               className={mobileIconButtonClass}
               href="/cart"
+              prefetch={false}
             >
               <BagIcon className="h-4 w-4" />
             </Link>
-            {currentMember ? (
+            {resolvedCurrentMember ? (
               <form action={signOutAction}>
                 <input type="hidden" name="returnTo" value="/" />
                 <button
@@ -219,23 +234,24 @@ export async function Header() {
           </div>
 
           <div className="hidden min-[860px]:flex items-center gap-3 rounded-[20px] border border-black/12 bg-white px-4 py-3 text-black shadow-[0_14px_34px_rgba(15,17,22,0.06)]">
-            {currentMember?.isAdmin ? (
+            {resolvedCurrentMember?.isAdmin ? (
               <Link
                 className="inline-flex h-10 items-center justify-center rounded-xl border border-black/12 bg-white px-4 text-[15px] font-medium text-black/84 transition-colors duration-200 hover:bg-black/[0.03] hover:text-black"
                 href="/admin"
+                prefetch={false}
               >
                 ADMIN
               </Link>
             ) : null}
-            <Link className={actionItemClass} href="/mypage">
+            <Link className={actionItemClass} href="/mypage" prefetch={false}>
               <UserIcon className="h-4 w-4" />
               마이
             </Link>
-            <Link className={actionItemClass} href="/cart">
+            <Link className={actionItemClass} href="/cart" prefetch={false}>
               <BagIcon className="h-4 w-4" />
               장바구니
             </Link>
-            {currentMember ? (
+            {resolvedCurrentMember ? (
               <form action={signOutAction}>
                 <input type="hidden" name="returnTo" value="/" />
                 <button
@@ -265,6 +281,7 @@ export async function Header() {
               key={item.label}
               className="transition-colors duration-300 hover:text-black"
               href={resolveNavigationHref(item.href)}
+              prefetch={false}
             >
               {item.label}
             </Link>

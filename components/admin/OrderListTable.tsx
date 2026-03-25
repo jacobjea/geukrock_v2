@@ -4,6 +4,7 @@ import {
   cancelOrderAction,
   updateOrderPaymentStatusAction,
 } from "@/app/admin/orders/actions";
+import { OrderActionSubmitButton } from "@/components/admin/OrderActionSubmitButton";
 import { formatDateTime, formatPrice } from "@/lib/admin/format";
 import {
   ORDER_PAYMENT_STATUS_LABELS,
@@ -167,24 +168,27 @@ export function OrderListTable({ items, returnTo }: OrderListTableProps) {
                 <td className="border-b border-[#e5e7eb] px-4 py-4">
                   <div className="flex flex-col gap-2">
                     <form action={paymentAction}>
-                      <button
-                        type="submit"
+                      <OrderActionSubmitButton
                         disabled={item.orderStatus === "canceled"}
-                        className="inline-flex w-full items-center justify-center rounded border border-[#d9dde3] bg-white px-3 py-2 text-xs font-medium text-[#374151] hover:bg-[#f7f8fa] disabled:cursor-not-allowed disabled:bg-[#f3f4f6] disabled:text-[#9ca3af]"
-                      >
-                        {item.paymentStatus === "confirmed"
-                          ? "입금 확인 해제"
-                          : "입금 확인"}
-                      </button>
+                        idleLabel={
+                          item.paymentStatus === "confirmed"
+                            ? "입금 확인 해제"
+                            : "입금 확인"
+                        }
+                        pendingLabel={
+                          item.paymentStatus === "confirmed"
+                            ? "해제 중..."
+                            : "처리 중..."
+                        }
+                      />
                     </form>
                     <form action={cancelAction}>
-                      <button
-                        type="submit"
+                      <OrderActionSubmitButton
                         disabled={item.orderStatus === "canceled"}
-                        className="inline-flex w-full items-center justify-center rounded border border-[#e5c5c5] bg-[#fff6f6] px-3 py-2 text-xs font-medium text-[#a13c3c] hover:bg-[#ffeaea] disabled:cursor-not-allowed disabled:border-[#e5e7eb] disabled:bg-[#f3f4f6] disabled:text-[#9ca3af]"
-                      >
-                        주문 취소
-                      </button>
+                        idleLabel="주문 취소"
+                        pendingLabel="취소 중..."
+                        tone="danger"
+                      />
                     </form>
                   </div>
                 </td>
